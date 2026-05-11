@@ -21,6 +21,13 @@
                             @method('PUT')
                         @endif
 
+                        @if(! $client->exists && ($linkProject ?? null))
+                            <input type="hidden" name="project_id" value="{{ $linkProject->id }}">
+                            <p class="rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+                                Este cliente se vinculará al proyecto <span class="font-semibold">{{ $linkProject->title }}</span> al guardarlo.
+                            </p>
+                        @endif
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Nombre Comercial -->
                             <div>
@@ -68,7 +75,7 @@
 
                         <!-- Botones -->
                         <div class="flex justify-end gap-4 pt-4 border-t border-gray-100">
-                            <a href="{{ route('clients.index') }}" class="bg-gray-200 py-2 px-4 rounded hover:bg-gray-300 text-gray-700 transition">Cancelar</a>
+                            <a href="{{ ($linkProject ?? null) ? route('projects.edit', $linkProject) : route('clients.index') }}" class="bg-gray-200 py-2 px-4 rounded hover:bg-gray-300 text-gray-700 transition">Cancelar</a>
                             <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition shadow-md">
                                 {{ $client->exists ? 'Actualizar Cliente' : 'Guardar Cliente' }}
                             </button>

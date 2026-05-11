@@ -70,6 +70,9 @@
                                     Título
                                 </th>
                                 <th class="p-3 border-b-2 border-gray-200 bg-gray-100 text-sm font-semibold text-gray-600 uppercase tracking-wider">
+                                    Etiquetas
+                                </th>
+                                <th class="p-3 border-b-2 border-gray-200 bg-gray-100 text-sm font-semibold text-gray-600 uppercase tracking-wider">
                                     Estado
                                 </th>
                                 <th class="p-3 border-b-2 border-gray-200 bg-gray-100 text-sm font-semibold text-gray-600 uppercase tracking-wider">
@@ -86,8 +89,8 @@
                                         </select>
                                     </form>
                                 </th>
-                                <th class="p-3 border-b-2 border-gray-200 bg-gray-100 text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                                    Acciones
+                                <th class="p-3 border-b-2 border-gray-200 bg-gray-100 text-sm font-semibold text-gray-600 uppercase tracking-wider w-12">
+                                    <span class="sr-only">Web</span>
                                 </th>
                             </tr>
                         </thead>
@@ -99,11 +102,15 @@
                         >
                             @foreach($projects as $project)
                             <tr
-                                class="hover:bg-gray-50 {{ $canReorder ? 'bg-white' : '' }}"
+                                class="hover:bg-gray-50 cursor-pointer {{ $canReorder ? 'bg-white' : '' }}"
+                                role="link"
+                                tabindex="0"
+                                onclick="window.location='{{ route('projects.edit', $project) }}'"
+                                onkeydown="if (event.key === 'Enter') { window.location='{{ route('projects.edit', $project) }}'; }"
                                 @if($canReorder) data-project-id="{{ $project->id }}" @endif
                             >
                                 @if($canReorder)
-                                <td class="p-2 border-b border-gray-200 align-middle">
+                                <td class="p-2 border-b border-gray-200 align-middle" onclick="event.stopPropagation();">
                                     <button type="button" class="project-drag-handle cursor-grab active:cursor-grabbing p-2 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100" title="Arrastrar para reordenar">
                                         <span class="sr-only">Arrastrar para reordenar</span>
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm10-12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></svg>
@@ -115,31 +122,49 @@
                                     <div class="text-xs text-gray-500">{{ Str::limit($project->description, 50) }}</div>
                                 </td>
                                 <td class="p-3 border-b border-gray-200 text-sm">
+                                    @forelse($project->categories ?? [] as $category)
+                                        <span class="inline-flex items-center px-2 py-0.5 mr-1 mb-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">
+                                            {{ $category }}
+                                        </span>
+                                    @empty
+                                        <span class="text-gray-400 italic text-xs">Sin etiquetas</span>
+                                    @endforelse
+                                </td>
+                                <td class="p-3 border-b border-gray-200 text-sm">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                         {{ $project->visibility === 'public' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
                                         {{ ucfirst($project->visibility) }}
                                     </span>
                                 </td>
-                                <td class="p-3 border-b border-gray-200 text-sm">
-                                    @forelse($project->clients as $client)
-                                        <!-- Enlace al cliente para ir rápido a editarlo si hace falta -->
-                                        <a href="{{ route('clients.edit', $client) }}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition">
-                                            {{ $client->commercial_name }}
-                                        </a>
-                                    @empty
-                                        <span class="text-gray-400 italic text-xs">Interno / Sin Asignar</span>
-                                    @endforelse
+                                <td class="p-3 border-b border-gray-200 text-sm" onclick="event.stopPropagation();">
+                                    @if($project->clients->isNotEmpty())
+                                        @foreach($project->clients as $client)
+                                            <a href="{{ route('clients.edit', $client) }}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition">
+                                                {{ $client->commercial_name }}
+                                            </a>
+                                        @endforeach
+                                    @elseif($project->is_internal)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                            Interno
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400 italic text-xs">Sin asignar</span>
+                                    @endif
                                 </td>
-                                <td class="p-3 border-b border-gray-200 text-sm">
-                                    <a href="{{ route('projects.edit', $project) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Editar</a>
-                                    
-                                    <form action="{{ route('projects.destroy', $project) }}" method="POST" class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('¿Estás seguro?')">
-                                            Borrar
-                                        </button>
-                                    </form>
+                                <td class="p-3 border-b border-gray-200 text-sm text-right align-middle" onclick="event.stopPropagation();">
+                                    @php
+                                        $websiteLink = $project->links->first(fn ($link) => ! $link->isGitHub());
+                                    @endphp
+                                    @if($websiteLink)
+                                        <a href="{{ $websiteLink->url }}" target="_blank" rel="noopener noreferrer"
+                                           class="inline-flex items-center justify-center p-2 text-indigo-600 hover:text-indigo-900 rounded hover:bg-indigo-50"
+                                           title="Abrir web del proyecto">
+                                            <span class="sr-only">Abrir web del proyecto</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                            </svg>
+                                        </a>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach

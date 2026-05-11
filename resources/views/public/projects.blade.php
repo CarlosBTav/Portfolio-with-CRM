@@ -70,7 +70,7 @@
                 }
             @endphp
             <div class="{{ $cellClass }}">
-                <x-project-card :project="$project" />
+                <x-project-card :project="$project" :include-private-links="true" />
             </div>
         @empty
             <div class="col-span-full text-center py-12">

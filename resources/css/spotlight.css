@@ -117,6 +117,79 @@
     );
 }
 
+/*
+ * Navbar (shell de cristal): mismo tipo de borde luminoso que el footer —
+ * ::before sigue el cursor; ::after fija un foco sobre el ítem .is-active
+ * (--header-nav-active-strength viene del JS; opacidad sube al acercarse al header).
+ */
+#site-redesign-nav .srn-shell.js-header-border-spotlight {
+    position: relative;
+}
+
+#site-redesign-nav .srn-shell.js-header-border-spotlight > * {
+    position: relative;
+    z-index: 1;
+}
+
+#site-redesign-nav .srn-shell.js-header-border-spotlight::before,
+#site-redesign-nav .srn-shell.js-header-border-spotlight::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    pointer-events: none;
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+#site-redesign-nav .srn-shell.js-header-border-spotlight::before {
+    z-index: 0;
+    background: radial-gradient(
+        240px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(var(--color-secondary-light-rgb), 0.92) 0%,
+        rgba(var(--color-secondary-light-rgb), 0.38) 50%,
+        transparent 100%
+    );
+    opacity: var(--header-mouse-layer-opacity, 0);
+    transition: opacity 0.3s ease;
+}
+
+#site-redesign-nav .srn-shell.js-header-border-spotlight::after {
+    z-index: 0;
+    background: radial-gradient(
+        210px circle at var(--nav-active-x, 0px) var(--nav-active-y, 0px),
+        rgba(var(--color-secondary-light-rgb), 1) 0%,
+        rgba(var(--color-secondary-light-rgb), 0.52) 48%,
+        rgba(var(--color-secondary-light-rgb), 0.2) 70%,
+        transparent 100%
+    );
+    opacity: calc(var(--header-nav-active-strength, 0) * (0.64 + 0.36 * var(--header-mouse-layer-opacity, 0)));
+    transition: opacity 0.3s ease;
+}
+
+html.dark #site-redesign-nav .srn-shell.js-header-border-spotlight::before {
+    background: radial-gradient(
+        240px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(var(--color-secondary-rgb), 1) 0%,
+        rgba(var(--color-secondary-rgb), 0.5) 50%,
+        transparent 100%
+    );
+}
+
+html.dark #site-redesign-nav .srn-shell.js-header-border-spotlight::after {
+    background: radial-gradient(
+        200px circle at var(--nav-active-x, 0px) var(--nav-active-y, 0px),
+        rgba(var(--color-secondary-rgb), 1) 0%,
+        rgba(var(--color-secondary-rgb), 0.62) 48%,
+        rgba(var(--color-secondary-rgb), 0.24) 70%,
+        transparent 100%
+    );
+}
+
 /* Footer: borde más legible + mismo spotlight que las tarjetas (solo el anillo; inset 0 para no recortar con overflow-hidden) */
 .site-footer.js-footer-border-spotlight {
     position: relative;

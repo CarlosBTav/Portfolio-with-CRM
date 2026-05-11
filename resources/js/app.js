@@ -1,4 +1,5 @@
 import './bootstrap';
+import './public-faq-accordion.js';
 
 import Alpine from 'alpinejs';
 

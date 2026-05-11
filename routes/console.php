@@ -9,5 +9,8 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('model:prune', [
-    '--model' => [\App\Models\Message::class],
+    '--model' => [
+        \App\Models\Message::class,
+        \App\Models\Project::class,
+    ],
 ])->daily();

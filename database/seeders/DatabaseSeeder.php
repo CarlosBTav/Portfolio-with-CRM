@@ -29,7 +29,14 @@ class DatabaseSeeder extends Seeder
             'title' => 'Mi Portfolio Personal',
             'description' => 'Aplicación CMS desarrollada con Laravel y Tailwind para gestión de proyectos.',
             'visibility' => 'public',
-            'url_repo' => 'https://github.com/CarloskHard/pediente',
+            'categories' => ['Portfolio', 'CMS'],
+        ]);
+
+        $portfolio->links()->create([
+            'url' => 'https://github.com/CarloskHard/pediente',
+            'type' => 'github',
+            'visibility' => 'public',
+            'sort_order' => 0,
         ]);
 
         // 4. Vincular Tecnologías al Proyecto (La Magia del N:M)
@@ -41,6 +48,7 @@ class DatabaseSeeder extends Seeder
             'title' => 'E-Commerce Básico',
             'description' => 'Tienda online simple.',
             'visibility' => 'draft',
+            'categories' => ['Tienda', 'Web'],
         ]);
     }
 }

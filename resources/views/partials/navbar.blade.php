@@ -326,7 +326,7 @@
     }"
     @click.outside="open = false"
 >
-    <div class="srn-shell" :class="{ 'is-scrolled': scrolled }">
+    <div class="srn-shell js-header-border-spotlight" :class="{ 'is-scrolled': scrolled }">
         <div class="srn-row">
             <div class="srn-left">
                 {{-- Misma marca interactiva que en main: ola magnética + brillo al cursor (layout public.blade.php) --}}

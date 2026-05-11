@@ -129,3 +129,132 @@ html.dark body.about-ai-dots-page .ai-dots-bg-stack {
         min-height: 100lvh;
     }
 }
+
+/*
+ * FAQ acordeón (tarjeta tipo BichaTattoo, colores Carlos Codex / tokens indigo).
+ */
+@layer components {
+    .cc-faq-group {
+        @apply space-y-3;
+    }
+
+    .cc-faq-item {
+        overflow: hidden;
+        border-radius: 1rem;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        background: var(--color-surface);
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    html.dark .cc-faq-item:not(.cc-faq-item--night) {
+        border-color: rgba(255, 255, 255, 0.1);
+        background: rgba(15, 23, 42, 0.72);
+    }
+
+    /* Bloques siempre oscuros (p. ej. panel #080c24 en Servicios) */
+    .cc-faq-item--night {
+        border-color: rgba(255, 255, 255, 0.1);
+        background: rgba(15, 20, 46, 0.88);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+    }
+
+    .cc-faq-item.is-open {
+        border-color: rgba(var(--color-secondary-light-rgb), 0.45);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .cc-faq-item--night.is-open {
+        border-color: rgba(129, 140, 248, 0.48);
+    }
+
+    .cc-faq-item__summary {
+        @apply flex w-full cursor-pointer items-center justify-between gap-4 bg-transparent px-5 py-4 text-left text-sm font-medium md:text-base;
+        border: 0;
+        appearance: none;
+        color: var(--color-text);
+    }
+
+    html.dark .cc-faq-item:not(.cc-faq-item--night) .cc-faq-item__summary {
+        @apply text-white;
+    }
+
+    .cc-faq-item--night .cc-faq-item__summary {
+        @apply text-white;
+    }
+
+    .cc-faq-item__question {
+        transition: color 0.2s ease;
+    }
+
+    .cc-faq-item__panel {
+        height: 0;
+        opacity: 0;
+        overflow: hidden;
+    }
+
+    .cc-faq-item__icon {
+        @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xl leading-none transition;
+        border: 1px solid rgba(15, 23, 42, 0.18);
+        color: rgba(15, 23, 42, 0.65);
+    }
+
+    html.dark .cc-faq-item:not(.cc-faq-item--night) .cc-faq-item__icon {
+        border-color: rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.78);
+    }
+
+    .cc-faq-item--night .cc-faq-item__icon {
+        border-color: rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.78);
+    }
+
+    .cc-faq-item.is-open .cc-faq-item__icon {
+        transform: rotate(45deg);
+        border-color: rgba(var(--color-secondary-light-rgb), 0.5);
+        color: #ffffff;
+    }
+
+    .cc-faq-item.is-open:not(.cc-faq-item--night) .cc-faq-item__question {
+        color: var(--color-secondary);
+    }
+
+    html.dark .cc-faq-item.is-open:not(.cc-faq-item--night) .cc-faq-item__question {
+        color: var(--color-secondary-light);
+    }
+
+    .cc-faq-item--night.is-open .cc-faq-item__question {
+        color: #a5b4fc;
+    }
+
+    .cc-faq-item__summary:focus-visible {
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+        box-shadow:
+            0 0 0 2px var(--color-bg),
+            0 0 0 4px rgba(var(--color-secondary-rgb), 0.45);
+    }
+
+    .cc-faq-item__answer {
+        @apply border-t px-5 pb-5 pt-4 text-sm leading-relaxed md:text-[15px];
+        border-color: rgba(15, 23, 42, 0.1);
+        color: var(--color-text-muted);
+    }
+
+    html.dark .cc-faq-item:not(.cc-faq-item--night) .cc-faq-item__answer {
+        @apply border-white/10 text-gray-300;
+    }
+
+    .cc-faq-item--night .cc-faq-item__answer {
+        @apply border-white/10 text-slate-400;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .cc-faq-item__icon,
+        .cc-faq-item__question,
+        .cc-faq-item {
+            transition: none !important;
+        }
+    }
+}

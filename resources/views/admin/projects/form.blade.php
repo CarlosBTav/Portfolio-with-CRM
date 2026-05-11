@@ -37,39 +37,185 @@
                                 </div>
                             </div>
 
-                            <!-- URLs -->
-                            <div>
-                                <label for="url_repo" class="block text-sm font-bold text-gray-700">URL Repositorio (GitHub)</label>
-                                <input type="url" name="url_repo" value="{{ old('url_repo', $project->url_repo) }}"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <div class="col-span-2" x-data="projectLinksManager(@js($initialLinks), @js($linkTypeOptions))" x-init="$el.closest('form')?.addEventListener('submit', (event) => prepareLinksForSubmit(event))">
+                                <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700">Enlaces del proyecto</label>
+                                        <p class="mt-1 text-xs text-gray-500">Añade tantos enlaces como necesites. Los marcados como privados no se mostrarán en la web pública.</p>
+                                    </div>
+                                    <button type="button" @click="addLink()"
+                                        class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-semibold text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
+                                        + Añadir enlace
+                                    </button>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <template x-for="(link, index) in items" :key="index">
+                                        <div class="grid grid-cols-1 lg:grid-cols-[auto_minmax(10rem,1fr)_minmax(0,2fr)_auto] gap-2 items-center py-1 transition-colors"
+                                            :class="link.visibility === 'private' ? 'text-gray-500' : 'text-gray-900'">
+                                            <button type="button"
+                                                @click="toggleLinkVisibility(link)"
+                                                class="inline-flex h-10 items-center gap-2 rounded-lg border px-3 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                                :class="link.visibility === 'public' ? 'border-green-200 bg-green-50 text-green-800 hover:bg-green-100' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'">
+                                                <x-icons.eye class="w-4 h-4 shrink-0" x-show="link.visibility === 'public'" />
+                                                <x-icons.eye-closed class="w-4 h-4 shrink-0" x-show="link.visibility === 'private'" />
+                                                <span x-text="link.visibility === 'public' ? 'Público' : 'Privado'"></span>
+                                            </button>
+
+                                            <div class="min-w-0">
+                                                <select x-show="editingIndex === index" x-model="link.type"
+                                                    class="h-10 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                    :class="link.visibility === 'private' ? 'bg-gray-100 text-gray-600' : ''">
+                                                    <template x-for="option in linkTypes" :key="option.value">
+                                                        <option :value="option.value" x-text="option.label"></option>
+                                                    </template>
+                                                </select>
+                                                <div x-show="editingIndex !== index"
+                                                    class="h-10 w-full min-w-0 flex items-center rounded-lg border border-gray-300 px-3 text-sm"
+                                                    :class="link.visibility === 'private' ? 'bg-gray-100 text-gray-600' : 'bg-white text-gray-700'">
+                                                    <span class="truncate" x-text="typeLabel(link.type)"></span>
+                                                </div>
+                                            </div>
+
+                                            <div class="min-w-0">
+                                                <input type="text" inputmode="url" x-show="editingIndex === index" x-model="link.url" placeholder="https://"
+                                                    class="h-10 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                    :class="link.visibility === 'private' ? 'bg-gray-100 text-gray-600 placeholder:text-gray-400' : ''">
+                                                <a x-show="editingIndex !== index" :href="link.url" target="_blank" rel="noopener noreferrer"
+                                                    class="h-10 w-full min-w-0 flex items-center rounded-lg border border-gray-300 px-3 text-sm font-medium truncate hover:underline"
+                                                    :class="link.visibility === 'private' ? 'bg-gray-100 text-gray-600 hover:text-gray-700' : 'bg-white text-indigo-600 hover:text-indigo-800'"
+                                                    x-text="link.url"></a>
+                                            </div>
+
+                                            <input type="hidden" :name="`links[${index}][type]`" :value="link.type">
+                                            <input type="hidden" :name="`links[${index}][url]`" :value="link.url">
+                                            <input type="hidden" :name="`links[${index}][visibility]`" :value="link.visibility">
+
+                                            <div class="flex items-center justify-end gap-1">
+                                                <template x-if="editingIndex === index">
+                                                    <button type="button" @click="confirmEdit()"
+                                                        class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
+                                                        title="Guardar cambios">
+                                                        <span class="sr-only">Guardar cambios</span>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                    </button>
+                                                    <button type="button" @click="cancelEdit()"
+                                                        class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 hover:bg-gray-100"
+                                                        title="Cancelar">
+                                                        <span class="sr-only">Cancelar</span>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                    <button type="button" @click="removeLink(index)"
+                                                        class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+                                                        title="Eliminar enlace">
+                                                        <span class="sr-only">Eliminar enlace</span>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </template>
+                                                <template x-if="editingIndex !== index">
+                                                    <button type="button" @click="startEdit(index)"
+                                                        class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                                                        title="Editar enlace">
+                                                        <span class="sr-only">Editar enlace</span>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button type="button" @click="removeLink(index)"
+                                                        class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+                                                        title="Eliminar enlace">
+                                                        <span class="sr-only">Eliminar enlace</span>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <div x-show="draftLink" x-cloak class="grid grid-cols-1 lg:grid-cols-[auto_minmax(10rem,1fr)_minmax(0,2fr)_auto] gap-2 items-center py-1 text-gray-900">
+                                        <button type="button"
+                                            @click="toggleLinkVisibility(draftLink)"
+                                            class="inline-flex h-10 items-center gap-2 rounded-lg border px-3 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                            :class="draftLink?.visibility === 'public' ? 'border-green-200 bg-green-50 text-green-800 hover:bg-green-100' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'">
+                                            <x-icons.eye class="w-4 h-4 shrink-0" x-show="draftLink?.visibility === 'public'" />
+                                            <x-icons.eye-closed class="w-4 h-4 shrink-0" x-show="draftLink?.visibility === 'private'" />
+                                            <span x-text="draftLink?.visibility === 'public' ? 'Público' : 'Privado'"></span>
+                                        </button>
+                                        <select x-model="draftLink.type"
+                                            class="h-10 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            <template x-for="option in linkTypes" :key="option.value">
+                                                <option :value="option.value" x-text="option.label"></option>
+                                            </template>
+                                        </select>
+                                        <input type="text" inputmode="url" x-model="draftLink.url" placeholder="https://"
+                                            class="h-10 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        <div class="flex items-center justify-end gap-1">
+                                            <button type="button" @click="confirmDraft()"
+                                                class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
+                                                title="Añadir enlace">
+                                                <span class="sr-only">Añadir enlace</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </button>
+                                            <button type="button" @click="cancelDraft()"
+                                                class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 hover:bg-gray-100"
+                                                title="Cancelar">
+                                                <span class="sr-only">Cancelar</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <p x-show="items.length === 0 && !draftLink" class="text-sm text-gray-500 italic">
+                                        Todavía no hay enlaces. Usa “Añadir enlace” para crear el primero.
+                                    </p>
+                                </div>
                             </div>
 
-                            <div>
-                                <label for="url_demo" class="block text-sm font-bold text-gray-700">URL Demo (Web)</label>
-                                <input type="url" name="url_demo" value="{{ old('url_demo', $project->url_demo) }}"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            </div>
-
-                            <div>
-                                <label for="demo_cta_label" class="block text-sm font-bold text-gray-700">Texto botón demo</label>
-                                <select name="demo_cta_label" id="demo_cta_label"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <option value="Demo" {{ old('demo_cta_label', $project->demo_cta_label ?? 'Demo') === 'Demo' ? 'selected' : '' }}>Demo</option>
-                                    <option value="Visitar" {{ old('demo_cta_label', $project->demo_cta_label) === 'Visitar' ? 'selected' : '' }}>Visitar</option>
-                                    <option value="Ver app" {{ old('demo_cta_label', $project->demo_cta_label) === 'Ver app' ? 'selected' : '' }}>Ver app (icono Play Store)</option>
-                                </select>
-                                <p class="mt-1 text-xs text-gray-500">Si no hay URL demo, este texto se ignora.</p>
-                            </div>
-                            
                             <!-- Visibilidad -->
-                            <div>
-                                <label for="visibility" class="block text-sm font-bold text-gray-700">Visibilidad</label>
-                                <select name="visibility" id="visibility"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <option value="public" {{ old('visibility', $project->visibility) == 'public' ? 'selected' : '' }}>Público</option>
-                                    <option value="private" {{ old('visibility', $project->visibility) == 'private' ? 'selected' : '' }}>Privado</option>
-                                    <option value="draft" {{ old('visibility', $project->visibility) == 'draft' ? 'selected' : '' }}>Borrador</option>
-                                </select>
+                            <div x-data="projectVisibilityManager(@js(old('visibility', $project->visibility ?? 'draft')))">
+                                <label class="block text-sm font-bold text-gray-700">Visibilidad</label>
+                                <input type="hidden" name="visibility" :value="visibility">
+                                <button type="button"
+                                    @click="cycleVisibility()"
+                                    class="mt-1 inline-flex w-full items-center gap-2 rounded-lg border px-3 py-2 min-h-[42px] text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                    :class="visibility === 'public'
+                                        ? 'border-green-200 bg-green-50 text-green-800 hover:bg-green-100'
+                                        : (visibility === 'private'
+                                            ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                            : 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100')">
+                                    <x-icons.eye class="w-4 h-4 shrink-0" x-show="visibility === 'public'" />
+                                    <x-icons.eye-closed class="w-4 h-4 shrink-0" x-show="visibility !== 'public'" />
+                                    <span x-text="visibilityLabel()"></span>
+                                </button>
+                            </div>
+
+                            <div class="col-span-2">
+                                <label class="block text-sm font-bold text-gray-700 mb-3">Etiquetas del proyecto</label>
+                                <p class="text-xs text-gray-500 mb-4">Clasificación del proyecto, independiente de las tecnologías.</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    @foreach($projectCategories as $projectCategory)
+                                        <div class="flex items-center">
+                                            <input type="checkbox" name="categories[]" value="{{ $projectCategory }}" id="category_{{ $projectCategory }}"
+                                                @if((is_array(old('categories')) && in_array($projectCategory, old('categories'))) || in_array($projectCategory, $project->categories ?? [], true)) checked @endif
+                                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                            <label for="category_{{ $projectCategory }}" class="ml-2 block text-sm text-gray-900 cursor-pointer">
+                                                {{ $projectCategory }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
 
@@ -177,14 +323,37 @@
                         </div>
 
                         <!-- Clientes -->
-                        <div class="pt-6 border-t border-gray-100">
-                            <label class="block text-sm font-bold text-gray-700 mb-3">Cliente Asociado (Opcional)</label>
+                        @php
+                            $hasOldClients = is_array(old('clients')) && count(old('clients')) > 0;
+                            $hasSelectedClients = $hasOldClients || $project->clients->isNotEmpty();
+                            $isInternalClient = (bool) old('is_internal', $project->is_internal) && ! $hasSelectedClients;
+                        @endphp
+                        <div class="pt-6 border-t border-gray-100" x-data="{ internal: {{ $isInternalClient ? 'true' : 'false' }} }">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
+                                <label class="block text-sm font-bold text-gray-700">Cliente Asociado (Opcional)</label>
+                                @if($project->exists)
+                                    <a href="{{ route('clients.create', ['project' => $project]) }}"
+                                       class="inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                        Nuevo cliente
+                                    </a>
+                                @endif
+                            </div>
+                            <p class="text-xs text-gray-500 mb-4">Marca Interno para proyectos propios sin cliente. Si no eliges nada, el proyecto queda sin asignar.</p>
+                            <label class="flex items-center mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer">
+                                <input type="checkbox" name="is_internal" value="1" x-model="internal"
+                                    @change="if (internal) { $refs.clientCheckbox.forEach((checkbox) => { checkbox.checked = false; }); }"
+                                    class="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded">
+                                <span class="ml-2 block text-sm font-medium text-amber-900">Interno</span>
+                            </label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-48 overflow-y-auto p-4 bg-gray-50 rounded-lg border border-gray-200">
                                 @foreach($clients as $client)
                                     <div class="flex items-center">
-                                        <input type="checkbox" name="clients[]" value="{{ $client->id }}" id="client_{{ $client->id }}"
+                                        <input type="checkbox" name="clients[]" value="{{ $client->id }}" id="client_{{ $client->id }}" x-ref="clientCheckbox"
                                             @if((is_array(old('clients')) && in_array($client->id, old('clients'))) || ($project->clients->contains($client->id))) checked @endif
-                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                            :disabled="internal"
+                                            @change="if ($event.target.checked) { internal = false; }"
+                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50">
                                         <label for="client_{{ $client->id }}" class="ml-2 block text-sm text-gray-900 cursor-pointer">
                                             {{ $client->commercial_name }}
                                         </label>
@@ -201,6 +370,23 @@
                             </button>
                         </div>
                     </form>
+
+                    @if($project->exists)
+                        <div class="mt-8 border-t border-gray-200 pt-6">
+                            <h3 class="text-sm font-bold text-gray-700">Zona de peligro</h3>
+                            <p class="mt-2 text-sm text-gray-500">
+                                El proyecto pasará a la papelera durante 30 días. Después se eliminará de forma permanente junto con su documentación compartida vinculada, si la tiene.
+                            </p>
+                            <form action="{{ route('projects.destroy', $project) }}" method="POST" class="mt-4"
+                                  onsubmit="return confirm('¿Enviar este proyecto a la papelera? Podrá eliminarse definitivamente en 30 días.');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100">
+                                    Borrar
+                                </button>
+                            </form>
+                        </div>
+                    @endif
 
                 </div>
             </div>
@@ -332,6 +518,164 @@
                         return 'new:' + item.originalIndex;
                     }
                 }
+            }));
+
+            Alpine.data('projectLinksManager', (initialLinks, linkTypes) => ({
+                items: Array.isArray(initialLinks) ? initialLinks : [],
+                linkTypes: Array.isArray(linkTypes) ? linkTypes : [],
+                draftLink: null,
+                editingIndex: null,
+                editSnapshot: null,
+
+                addLink() {
+                    if (this.draftLink || this.editingIndex !== null) {
+                        return;
+                    }
+
+                    this.draftLink = {
+                        url: '',
+                        type: this.linkTypes[0]?.value ?? 'demo',
+                        visibility: 'public',
+                    };
+                },
+
+                confirmDraft() {
+                    const url = (this.draftLink?.url || '').trim();
+
+                    if (!url) {
+                        return;
+                    }
+
+                    this.items.push({
+                        url,
+                        type: this.draftLink.type,
+                        visibility: this.draftLink.visibility || 'public',
+                    });
+
+                    this.draftLink = null;
+                },
+
+                cancelDraft() {
+                    this.draftLink = null;
+                },
+
+                startEdit(index) {
+                    if (this.draftLink) {
+                        return;
+                    }
+
+                    this.cancelEdit();
+                    this.editingIndex = index;
+                    this.editSnapshot = { ...this.items[index] };
+                },
+
+                confirmEdit() {
+                    if (this.editingIndex === null) {
+                        return;
+                    }
+
+                    const url = (this.items[this.editingIndex].url || '').trim();
+
+                    if (!url) {
+                        return;
+                    }
+
+                    this.items[this.editingIndex].url = url;
+                    this.editingIndex = null;
+                    this.editSnapshot = null;
+                },
+
+                cancelEdit() {
+                    if (this.editingIndex === null) {
+                        return;
+                    }
+
+                    this.items[this.editingIndex] = { ...this.editSnapshot };
+                    this.editingIndex = null;
+                    this.editSnapshot = null;
+                },
+
+                removeLink(index) {
+                    if (this.editingIndex === index) {
+                        this.editingIndex = null;
+                        this.editSnapshot = null;
+                    } else if (this.editingIndex !== null && index < this.editingIndex) {
+                        this.editingIndex -= 1;
+                    }
+
+                    this.items.splice(index, 1);
+                },
+
+                toggleLinkVisibility(link) {
+                    if (!link) {
+                        return;
+                    }
+
+                    link.visibility = link.visibility === 'public' ? 'private' : 'public';
+                },
+
+                typeLabel(type) {
+                    return this.linkTypes.find((option) => option.value === type)?.label ?? type;
+                },
+
+                prepareLinksForSubmit(event) {
+                    if (this.draftLink) {
+                        const url = (this.draftLink.url || '').trim();
+
+                        if (!url) {
+                            this.draftLink = null;
+                            return;
+                        }
+
+                        event.preventDefault();
+                        this.confirmDraft();
+                        this.$nextTick(() => {
+                            const form = this.$el.closest('form');
+
+                            if (!form) {
+                                return;
+                            }
+
+                            if (typeof form.requestSubmit === 'function') {
+                                form.requestSubmit();
+                            } else {
+                                form.submit();
+                            }
+                        });
+
+                        return;
+                    }
+
+                    if (this.editingIndex !== null) {
+                        const url = (this.items[this.editingIndex].url || '').trim();
+
+                        if (!url) {
+                            event.preventDefault();
+                            return;
+                        }
+
+                        this.confirmEdit();
+                    }
+                },
+            }));
+
+            Alpine.data('projectVisibilityManager', (initialVisibility) => ({
+                visibility: initialVisibility || 'draft',
+
+                cycleVisibility() {
+                    const order = ['public', 'private', 'draft'];
+                    const currentIndex = order.indexOf(this.visibility);
+
+                    this.visibility = order[(currentIndex + 1) % order.length];
+                },
+
+                visibilityLabel() {
+                    return {
+                        public: 'Público',
+                        private: 'Privado',
+                        draft: 'Borrador',
+                    }[this.visibility] ?? 'Borrador';
+                },
             }));
 
             // 2. GESTOR DE TECNOLOGÍAS

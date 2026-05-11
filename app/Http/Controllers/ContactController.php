@@ -120,18 +120,30 @@ class ContactController extends Controller
         return back()->with('success', 'Contacto eliminado.');
     }
 
-     public function storePublicMessage(Request $request)
+    public function storePublicMessage(Request $request)
     {
+        $isBookingRequest = $request->input('form_context') === 'booking';
+
         // 1. Validar (Laravel automáticamente devolverá JSON si la petición es AJAX)
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'email' => $isBookingRequest
+                ? 'required_if:booking_channel,Videollamada|nullable|email|max:255'
+                : 'required|email|max:255',
+            'phone' => $isBookingRequest
+                ? 'required_if:booking_channel,Llamada telefónica,WhatsApp|nullable|string|max:40'
+                : 'nullable|string|max:40',
             'content' => 'required|string|min:10',
             'inquiry_type' => 'required|in:web,mobile,business',
+            'booking_channel' => $isBookingRequest
+                ? 'required|in:Videollamada,Llamada telefónica,WhatsApp'
+                : 'nullable|string',
             'web_products' => 'required_if:inquiry_type,web|array',
             'web_products.*' => 'string|in:basic_web,crm,erp,cms_backoffice,other',
-        ],[
+        ], [
             'content.min' => 'El mensaje debe tener al menos 10 caracteres para poder ayudarte mejor.',
+            'email.required_if' => 'Indica tu email para poder enviarte el enlace de videollamada.',
+            'phone.required_if' => 'Indica tu teléfono para poder contactarte por ese canal.',
             'inquiry_type.required' => 'Indica qué tipo de proyecto o contacto te interesa.',
             'web_products.required_if' => 'Selecciona al menos un producto para tu web.',
         ]);
@@ -144,7 +156,11 @@ class ContactController extends Controller
         $inquiryLabel = $inquiryLabels[$validated['inquiry_type']] ?? $validated['inquiry_type'];
 
         $content = $validated['content'];
-        if ($validated['inquiry_type'] === 'web') {
+        if ($isBookingRequest) {
+            $phoneLine = ! empty($validated['phone']) ? "\nTeléfono: ".$validated['phone'] : '';
+            $emailLine = ! empty($validated['email']) ? "\nEmail: ".$validated['email'] : '';
+            $content = "Solicitud de llamada de 15 min\nCanal preferido: ".$validated['booking_channel'].$phoneLine.$emailLine."\n\n".$validated['content'];
+        } elseif ($validated['inquiry_type'] === 'web') {
             $webProductLabels = [
                 'basic_web' => 'Web básica (landing page, hosting, dominio y hasta 6 páginas)',
                 'crm' => 'CRM',
@@ -167,8 +183,8 @@ class ContactController extends Controller
         // No pasamos contact_id porque es un desconocido (null)
         $message = Message::create([
             'sender_name' => $validated['name'],
-            'sender_email' => $validated['email'],
-            'subject' => 'Nuevo mensaje web ('.$inquiryLabel.') — '.$validated['name'],
+            'sender_email' => $validated['email'] ?? 'sin-email@booking.local',
+            'subject' => ($isBookingRequest ? 'Solicitud de llamada' : 'Nuevo mensaje web ('.$inquiryLabel.')').' — '.$validated['name'],
             'content' => $content,
             'is_read' => false,
         ]);
@@ -187,7 +203,12 @@ class ContactController extends Controller
             ]);
         }
 
-        // Fallback clásico (En vez de URL::previous(), forzamos a que vaya al ancla de forma limpia)
-        return redirect('/#contact')->with('status', '¡Tu mensaje está en camino! Te contestaré lo antes posible.');
+        $flash = ['status' => '¡Tu mensaje está en camino! Te contestaré lo antes posible.'];
+
+        if ($request->input('form_context') === 'services') {
+            return redirect()->route('public.services')->withFragment('servicios-contacto')->with($flash);
+        }
+
+        return redirect('/#contact')->with($flash);
     }
 }

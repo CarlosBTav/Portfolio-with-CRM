@@ -2,10 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\Project;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ServicePagesTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_service_pages_are_publicly_accessible(): void
     {
         $this->get(route('public.services'))
@@ -29,5 +33,28 @@ class ServicePagesTest extends TestCase
         $response->assertSee(route('public.services.web'), false);
         $response->assertSee(route('public.services.app'), false);
         $response->assertSee(route('home', ['service' => 'custom-solutions']) . '#contact', false);
+    }
+
+    public function test_web_development_page_only_lists_web_category_projects(): void
+    {
+        Project::create([
+            'title' => 'Sitio web corporativo',
+            'description' => 'Proyecto web público.',
+            'visibility' => 'public',
+            'categories' => ['Web'],
+        ]);
+
+        Project::create([
+            'title' => 'App móvil',
+            'description' => 'Proyecto móvil público.',
+            'visibility' => 'public',
+            'categories' => ['Mobile'],
+        ]);
+
+        $response = $this->get(route('public.services.web'));
+
+        $response->assertOk();
+        $response->assertSee('Sitio web corporativo', false);
+        $response->assertDontSee('App móvil', false);
     }
 }

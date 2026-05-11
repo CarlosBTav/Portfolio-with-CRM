@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\Project;
 use App\Models\QuoteVersion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -50,14 +51,19 @@ class ClientController extends Controller
     /**
      * Muestra el formulario de CREACIÓN.
      */
-    public function create()
+    public function create(Request $request)
     {
         // PATRÓN MODELO VACÍO:
         // Pasamos un objeto vacío para que la vista 'form' pueda usar $client->commercial_name sin error
         $client = new Client();
         $documentationVersionOptions = $this->documentationVersionOptions();
+        $linkProject = null;
 
-        return view('admin.clients.form', compact('client', 'documentationVersionOptions'));
+        if ($request->filled('project')) {
+            $linkProject = Project::query()->findOrFail($request->integer('project'));
+        }
+
+        return view('admin.clients.form', compact('client', 'documentationVersionOptions', 'linkProject'));
     }
 
     /**
@@ -75,9 +81,20 @@ class ClientController extends Controller
             'tax_id' => 'nullable|string|max:20', // CIF/NIF
             'notes' => 'nullable|string',
             'documentation_slug' => ['nullable', 'string', 'max:120', Rule::in(array_keys(config('documentation.versions', [])))],
+            'project_id' => 'nullable|integer|exists:projects,id',
         ]);
 
-        Client::create($validated);
+        $client = Client::create(collect($validated)->except('project_id')->all());
+
+        if ($request->filled('project_id')) {
+            $project = Project::query()->findOrFail($request->integer('project_id'));
+            $project->update(['is_internal' => false]);
+            $project->clients()->syncWithoutDetaching([$client->id]);
+
+            return redirect()
+                ->route('projects.edit', $project)
+                ->with('success', 'Cliente registrado y vinculado al proyecto.');
+        }
 
         return redirect()->route('clients.index')->with('success', 'Cliente registrado correctamente.');
     }

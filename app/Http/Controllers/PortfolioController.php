@@ -14,7 +14,7 @@ class PortfolioController extends Controller
         // Portada: Pedimos al Modelo 3 proyectos para el "destacados"
             /* Usamos 'with' (Eager Loading) para traer las tecnologías de golpe
                y ahorrar consultas a la base de datos (mejor rendimiento).    */
-        $projects = Project::with('technologies')
+        $projects = Project::with(['technologies', 'links'])
                     ->where('visibility', 'public')
                     ->orderBy('sort_order')
                     ->orderBy('id')
@@ -31,7 +31,7 @@ class PortfolioController extends Controller
     public function showAll()
     {
         // Aquí traemos todos, pero paginados de 9 en 9 para que cargue rápido
-        $projects = Project::with('technologies')
+        $projects = Project::with(['technologies', 'links'])
                     ->where('visibility', 'public')
                     ->orderBy('sort_order')
                     ->orderBy('id')
@@ -53,12 +53,27 @@ class PortfolioController extends Controller
 
     public function webDevelopment()
     {
-        return view('public.services.web-development');
+        $featuredProjects = Project::with(['technologies', 'links'])
+            ->where('visibility', 'public')
+            ->whereJsonContains('categories', 'Web')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->take(3)
+            ->get();
+
+        $whatsappPhone = preg_replace('/\D+/', '', (string) config('services.callmebot_whatsapp.phone'));
+
+        return view('public.services.web-development', compact('featuredProjects', 'whatsappPhone'));
     }
 
     public function appDevelopment()
     {
         return view('public.services.app-development');
+    }
+
+    public function servicesFaq()
+    {
+        return view('public.services.faq');
     }
 
     public function cv()

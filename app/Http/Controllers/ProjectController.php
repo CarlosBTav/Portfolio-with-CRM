@@ -8,12 +8,14 @@ use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProjectController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Project::with(['technologies', 'clients'])
+        $query = Project::with(['technologies', 'clients', 'links'])
             ->orderBy('sort_order')
             ->orderBy('id');
 
@@ -57,40 +59,54 @@ class ProjectController extends Controller
         $technologies = Technology::orderBy('name')->get();
         $clients = Client::orderBy('commercial_name')->get();
         
-        return view('admin.projects.form', compact('project', 'technologies', 'clients'));
+        $projectCategories = config('projects.categories', []);
+        $linkTypeOptions = $this->linkTypeOptions();
+        $initialLinks = $this->initialLinksForForm($project);
+
+        return view('admin.projects.form', compact('project', 'technologies', 'clients', 'projectCategories', 'linkTypeOptions', 'initialLinks'));
     }
 
     public function edit(Project $project)
     {
+        $project->load('links');
+
         $technologies = Technology::orderBy('name')->get();
         $clients = Client::orderBy('commercial_name')->get();
+        $projectCategories = config('projects.categories', []);
+        $linkTypeOptions = $this->linkTypeOptions();
+        $initialLinks = $this->initialLinksForForm($project);
 
-        return view('admin.projects.form', compact('project', 'technologies', 'clients'));
+        return view('admin.projects.form', compact('project', 'technologies', 'clients', 'projectCategories', 'linkTypeOptions', 'initialLinks'));
     }
 
     public function update(Request $request, Project $project)
     {
+        $this->normalizeSubmittedLinks($request);
+
         $data = $request->validate([
             'title' => 'required|max:255',
             'description' => 'required',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'order' => 'nullable|array', // Array que nos manda el Front con el orden
-            'url_repo' => 'nullable|url',
-            'url_demo' => 'nullable|url',
-            'demo_cta_label' => 'nullable|in:Demo,Visitar,Ver app',
+            'links' => 'nullable|array',
+            'links.*.url' => 'required|url',
+            'links.*.type' => ['required', Rule::in(array_keys(config('projects.link_types', [])))],
+            'links.*.visibility' => 'required|in:public,private',
             'visibility' => 'required|in:public,private,draft',
+            'categories' => 'required|array|min:1',
+            'categories.*' => [Rule::in(config('projects.categories', []))],
             'technologies' => 'nullable|array',
             'technologies.*' => 'exists:technologies,id',
             'clients' => 'nullable|array',
             'clients.*' => 'exists:clients,id',
+            'is_internal' => 'sometimes|boolean',
         ]);
 
-        if (empty($data['url_demo'])) {
-            $data['demo_cta_label'] = null;
-        } else {
-            $data['demo_cta_label'] = $data['demo_cta_label'] ?? 'Demo';
-        }
+        $this->validateClientAssignment($request);
+        $data['is_internal'] = $this->isInternalProject($request);
+
+        $links = $data['links'] ?? [];
 
         // GESTIÓN DE IMÁGENES Y SU ORDEN
         $finalImages = [];
@@ -125,34 +141,40 @@ class ProjectController extends Controller
 
         // Sincronizar relaciones
         $project->technologies()->sync($request->technologies ??[]);
-        $project->clients()->sync($request->clients ??[]);
+        $this->syncProjectClients($project, $request);
+        $this->syncProjectLinks($project, $links);
 
         return redirect()->route('projects.index')->with('success', 'Proyecto actualizado correctamente.');
     }
 
     public function store(Request $request)
     {
+        $this->normalizeSubmittedLinks($request);
+
         $data = $request->validate([
             'title' => 'required|max:255',
             'description' => 'required',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'order' => 'nullable|array',
-            'url_repo' => 'nullable|url',
-            'url_demo' => 'nullable|url',
-            'demo_cta_label' => 'nullable|in:Demo,Visitar,Ver app',
+            'links' => 'nullable|array',
+            'links.*.url' => 'required|url',
+            'links.*.type' => ['required', Rule::in(array_keys(config('projects.link_types', [])))],
+            'links.*.visibility' => 'required|in:public,private',
             'visibility' => 'required|in:public,private,draft',
+            'categories' => 'required|array|min:1',
+            'categories.*' => [Rule::in(config('projects.categories', []))],
             'technologies' => 'nullable|array', 
             'technologies.*' => 'exists:technologies,id',
             'clients' => 'nullable|array',
             'clients.*' => 'exists:clients,id',
+            'is_internal' => 'sometimes|boolean',
         ]);
 
-        if (empty($data['url_demo'])) {
-            $data['demo_cta_label'] = null;
-        } else {
-            $data['demo_cta_label'] = $data['demo_cta_label'] ?? 'Demo';
-        }
+        $this->validateClientAssignment($request);
+        $data['is_internal'] = $this->isInternalProject($request);
+
+        $links = $data['links'] ?? [];
 
         // GESTIÓN DE IMÁGENES NUEVAS Y ORDEN
         $finalImages = [];
@@ -179,21 +201,104 @@ class ProjectController extends Controller
 
         // Sincronizar Relaciones
         $project->technologies()->sync($request->technologies ??[]);
-        $project->clients()->sync($request->clients ??[]);
+        $this->syncProjectClients($project, $request);
+        $this->syncProjectLinks($project, $links);
 
         return redirect()->route('projects.index')->with('success', 'Proyecto creado correctamente.');
     }
 
     public function destroy(Project $project)
     {
-        // Borrar todas las imágenes del servidor
-        $images = $project->images ??[];
-        foreach ($images as $img) {
-            Storage::disk('public')->delete(str_replace('storage/', '', $img));
-        }
-
         $project->delete();
 
-        return redirect()->route('projects.index')->with('success', 'Proyecto eliminado.');
+        return redirect()->route('projects.index')->with('success', 'Proyecto enviado a la papelera. Se eliminará definitivamente en 30 días.');
+    }
+
+    private function validateClientAssignment(Request $request): void
+    {
+        if ($request->boolean('is_internal') && $request->filled('clients')) {
+            throw ValidationException::withMessages([
+                'clients' => 'No puedes marcar el proyecto como interno y asociar clientes a la vez.',
+            ]);
+        }
+    }
+
+    private function isInternalProject(Request $request): bool
+    {
+        return $request->boolean('is_internal') && ! $request->filled('clients');
+    }
+
+    private function syncProjectClients(Project $project, Request $request): void
+    {
+        if ($this->isInternalProject($request)) {
+            $project->clients()->sync([]);
+
+            return;
+        }
+
+        $project->clients()->sync($request->input('clients', []));
+    }
+
+    private function linkTypeOptions(): array
+    {
+        return collect(config('projects.link_types', []))
+            ->map(fn (string $label, string $value) => ['value' => $value, 'label' => $label])
+            ->values()
+            ->all();
+    }
+
+    private function initialLinksForForm(Project $project): array
+    {
+        if (is_array(old('links'))) {
+            return array_values(old('links'));
+        }
+
+        if (! $project->exists) {
+            return [];
+        }
+
+        return $project->links
+            ->map(fn ($link) => [
+                'url' => $link->url,
+                'type' => $link->type,
+                'visibility' => $link->visibility,
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function normalizeSubmittedLinks(Request $request): void
+    {
+        $request->merge([
+            'links' => collect($request->input('links', []))
+                ->filter(fn ($link) => filled($link['url'] ?? null))
+                ->map(function (array $link) {
+                    $url = trim($link['url']);
+
+                    if (! preg_match('/^https?:\/\//i', $url)) {
+                        $url = 'https://'.$url;
+                    }
+
+                    $link['url'] = $url;
+
+                    return $link;
+                })
+                ->values()
+                ->all(),
+        ]);
+    }
+
+    private function syncProjectLinks(Project $project, array $links): void
+    {
+        $project->links()->delete();
+
+        foreach ($links as $index => $link) {
+            $project->links()->create([
+                'url' => $link['url'],
+                'type' => $link['type'],
+                'visibility' => $link['visibility'] ?? 'public',
+                'sort_order' => $index,
+            ]);
+        }
     }
 }

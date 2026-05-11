@@ -4,7 +4,7 @@
 @section('meta_description', 'Desarrollo de aplicaciones móviles y soluciones multiplataforma con foco en experiencia de usuario, rendimiento y escalabilidad.')
 
 @section('content')
-<section class="relative py-24 mx-3 md:mx-6 lg:mx-10">
+<section class="relative mx-3 pt-32 pb-24 md:mx-6 lg:mx-10 lg:pt-36">
     <div class="max-w-screen-xl mx-auto px-4">
         <div class="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-900/85 p-8 md:p-12 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">Servicio</p>
@@ -77,19 +77,16 @@
     <div class="max-w-screen-xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
         <article class="lg:col-span-2 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-7">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Preguntas frecuentes</h2>
-            <div class="mt-6 space-y-5 text-gray-600 dark:text-gray-300">
-                <div>
-                    <h3 class="font-semibold text-gray-900 dark:text-white">¿Trabajas solo Android?</h3>
-                    <p class="mt-1">Puedo trabajar Android nativo y también propuestas multiplataforma según objetivos, presupuesto y plazos.</p>
-                </div>
-                <div>
-                    <h3 class="font-semibold text-gray-900 dark:text-white">¿Puedes mejorar una app existente?</h3>
-                    <p class="mt-1">Si. Audito el estado actual y planteo un plan progresivo para mejorar rendimiento, UX y arquitectura.</p>
-                </div>
-                <div>
-                    <h3 class="font-semibold text-gray-900 dark:text-white">¿También haces backend para la app?</h3>
-                    <p class="mt-1">Si necesitas APIs, panel admin o integraciones, puedo cubrir la solución completa de extremo a extremo.</p>
-                </div>
+            <div class="cc-faq-group mt-6" data-faq-group>
+                <x-faq-item question="¿Trabajas solo Android?">
+                    Puedo trabajar Android nativo y también propuestas multiplataforma según objetivos, presupuesto y plazos.
+                </x-faq-item>
+                <x-faq-item question="¿Puedes mejorar una app existente?">
+                    Si. Audito el estado actual y planteo un plan progresivo para mejorar rendimiento, UX y arquitectura.
+                </x-faq-item>
+                <x-faq-item question="¿También haces backend para la app?">
+                    Si necesitas APIs, panel admin o integraciones, puedo cubrir la solución completa de extremo a extremo.
+                </x-faq-item>
             </div>
         </article>
         <aside class="rounded-2xl border border-indigo-200/70 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-900/20 p-7">

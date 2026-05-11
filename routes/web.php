@@ -37,6 +37,7 @@ Route::get('/servicios', [PortfolioController::class, 'services'])->name('public
 // Rutas de servicios (detalle)
 Route::get('/servicios/desarrollo-web', [PortfolioController::class, 'webDevelopment'])->name('public.services.web');
 Route::get('/servicios/desarrollo-apps', [PortfolioController::class, 'appDevelopment'])->name('public.services.app');
+Route::get('/servicios/preguntas-frecuentes', [PortfolioController::class, 'servicesFaq'])->name('public.services.faq');
 
 // Para mensajes de contacto
 Route::post('/contact', [ContactController::class, 'storePublicMessage'])->name('contact.store');
