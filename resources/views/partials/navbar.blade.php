@@ -2,7 +2,9 @@
     $currentRoute = Route::currentRouteName();
     $isHome = $currentRoute === 'home';
     $isAbout = $currentRoute === 'public.about';
+    $isContact = $currentRoute === 'public.contact';
     $isServicePage = request()->routeIs('public.services', 'public.services.*');
+    $contactHref = route('public.contact');
     $navLogo = 'CARLOS.CODEX';
 @endphp
 
@@ -309,7 +311,7 @@
                 this.activeHomeSection = null;
                 return;
             }
-            const trackedIds = ['services', 'projects', 'about', 'contact'];
+            const trackedIds = ['services', 'projects', 'about'];
             const tracked = trackedIds
                 .map((id) => ({ id, el: document.getElementById(id) }))
                 .filter((item) => item.el);
@@ -359,16 +361,16 @@
                            :class="(isHome && activeHomeSection === 'projects') ? 'is-active' : ''">Portfolio</a>
                     </li>
                     <li>
-                        <a href="{{ $isHome ? '#contact' : route('home') . '#contact' }}"
-                           class="srn-link"
-                           :class="(isHome && activeHomeSection === 'contact') ? 'is-active' : ''">Contacto</a>
+                        <a href="{{ $contactHref }}"
+                           class="srn-link {{ $isContact ? 'is-active' : '' }}"
+                           @if($isContact) aria-current="page" @endif>Contacto</a>
                     </li>
                 </ul>
             </div>
 
             <div class="srn-right">
                 <x-theme-toggle />
-                <a href="{{ $isHome ? '#contact' : route('home') . '#contact' }}" class="srn-cta">
+                <a href="{{ $contactHref }}" class="srn-cta">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                     Hablemos
                 </a>
@@ -402,13 +404,12 @@
                            :class="(isHome && activeHomeSection === 'projects') ? 'is-active' : ''">Portfolio</a>
                     </li>
                     <li>
-                        <a href="{{ $isHome ? '#contact' : route('home') . '#contact' }}"
+                        <a href="{{ $contactHref }}"
                            @click="open = false"
-                           class="srn-mobile-link"
-                           :class="(isHome && activeHomeSection === 'contact') ? 'is-active' : ''">Contacto</a>
+                           class="srn-mobile-link {{ $isContact ? 'is-active' : '' }}">Contacto</a>
                     </li>
                     <li style="padding: 8px 12px 10px;">
-                        <a href="{{ $isHome ? '#contact' : route('home') . '#contact' }}" @click="open = false" class="srn-cta">
+                        <a href="{{ $contactHref }}" @click="open = false" class="srn-cta">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                             Hablemos
                         </a>

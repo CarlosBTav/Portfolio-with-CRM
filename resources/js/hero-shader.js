@@ -177,6 +177,11 @@
     px: -1000, py: -1000,
     speed: 0, radius: 120, ready: false,
   };
+  const touch = window.AiDotsTouch;
+  const ripples = touch ? touch.createRippleState() : { list: [] };
+  let touchPrimary = touch ? touch.isTouchPrimary() : false;
+  let unbindTouch = null;
+  let mouseMoveHandler = null;
 
   const waveDefs = [
     {
@@ -293,7 +298,9 @@
   }
   function visibility(gx, gy, cw, ch, now) {
     let v = waveBand(gx, gy, cw, ch, now);
-    if (mouse.ready) {
+    if (touchPrimary && touch) {
+      v += touch.visibilityBoost(gx, gy, ripples, now, { maxRadius: 240 });
+    } else if (mouse.ready) {
       const dx = mouse.x - gx, dy = mouse.y - gy;
       v += Math.exp(-(dx * dx + dy * dy) / (220 * 220)) * 0.7;
     }
@@ -301,16 +308,20 @@
   }
 
   function Dot(x, y) { this.x = x; this.y = y; this.bx = x; this.by = y; this.vx = 0; this.vy = 0; }
-  Dot.prototype.update = function () {
-    const dx = mouse.x - this.x, dy = mouse.y - this.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < mouse.radius && mouse.speed > 0.5) {
-      const force = (mouse.radius - dist) / mouse.radius;
-      const ang   = Math.atan2(dy, dx);
-      let pow     = mouse.speed * 0.005;
-      if (pow > 1.2) pow = 1.2;
-      this.vx -= Math.cos(ang) * force * pow;
-      this.vy -= Math.sin(ang) * force * pow;
+  Dot.prototype.update = function (now) {
+    if (touchPrimary && touch) {
+      touch.applyRippleForces(this, ripples, now);
+    } else {
+      const dx = mouse.x - this.x, dy = mouse.y - this.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < mouse.radius && mouse.speed > 0.5) {
+        const force = (mouse.radius - dist) / mouse.radius;
+        const ang   = Math.atan2(dy, dx);
+        let pow     = mouse.speed * 0.005;
+        if (pow > 1.2) pow = 1.2;
+        this.vx -= Math.cos(ang) * force * pow;
+        this.vy -= Math.sin(ang) * force * pow;
+      }
     }
     this.x += this.vx; this.y += this.vy;
     this.vx *= 0.9;    this.vy *= 0.9;
@@ -350,19 +361,23 @@
     const now = performance.now();
     const rgb = getComputedStyle(root).getPropertyValue('--hr-dots-dot').trim() || '165, 180, 252';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    let ds = Math.hypot(mouse.x - mouse.px, mouse.y - mouse.py);
-    if (ds > 72) ds = 72;
-    mouse.speed += (ds - mouse.speed) * 0.1;
-    mouse.px = mouse.x;
-    mouse.py = mouse.y;
+    if (touchPrimary && touch) {
+      touch.pruneRipples(ripples, now);
+    } else {
+      let ds = Math.hypot(mouse.x - mouse.px, mouse.y - mouse.py);
+      if (ds > 72) ds = 72;
+      mouse.speed += (ds - mouse.speed) * 0.1;
+      mouse.px = mouse.x;
+      mouse.py = mouse.y;
+    }
     for (let i = 0; i < dots.length; i++) {
-      dots[i].update();
+      dots[i].update(now);
       dots[i].draw(now, rgb);
     }
     requestAnimationFrame(animate);
   }
 
-  window.addEventListener('mousemove', (e) => {
+  function onMouseMove(e) {
     if ('pointerType' in e && e.pointerType === 'touch') return;
     const rect = canvas.getBoundingClientRect();
     mouse.x = e.clientX - rect.left;
@@ -370,7 +385,38 @@
     if (!mouse.ready) {
       mouse.px = mouse.x; mouse.py = mouse.y; mouse.speed = 0; mouse.ready = true;
     }
-  }, { passive: true });
+  }
+
+  function applyInteractionMode(isTouch) {
+    touchPrimary = isTouch;
+    mouse.ready = false;
+    mouse.x = -1000;
+    mouse.y = -1000;
+    mouse.speed = 0;
+    if (unbindTouch) {
+      unbindTouch();
+      unbindTouch = null;
+    }
+    if (mouseMoveHandler) {
+      window.removeEventListener('mousemove', mouseMoveHandler);
+      mouseMoveHandler = null;
+    }
+    if (isTouch && touch) {
+      unbindTouch = touch.bindTouchRipples(canvas, ripples);
+    } else {
+      ripples.list.length = 0;
+      mouseMoveHandler = onMouseMove;
+      window.addEventListener('mousemove', mouseMoveHandler, { passive: true });
+    }
+  }
+
+  applyInteractionMode(touchPrimary);
+  if (touch) {
+    touch.watchTouchMode(applyInteractionMode);
+  } else {
+    mouseMoveHandler = onMouseMove;
+    window.addEventListener('mousemove', mouseMoveHandler, { passive: true });
+  }
 
   window.addEventListener('resize', syncSize);
   if (window.ResizeObserver) {

@@ -5,8 +5,11 @@
 @section('body-class', 'antialiased font-sans flex flex-col min-h-dynamic transition-colors duration-300 text-gray-900 dark:text-gray-100 about-ai-dots-page')
 
 @section('content')
-<div class="relative min-h-dynamic overflow-x-hidden bg-transparent dark:bg-transparent">
-    <x-ai-dots-background variant="viewport" />
+<div class="relative w-full min-h-dynamic overflow-x-hidden bg-transparent dark:bg-transparent">
+    {{-- section: el fondo cubre toda la altura del contenido (viewport fijo cortaba al hacer scroll) --}}
+    <div class="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
+        <x-ai-dots-background variant="section" />
+    </div>
     <!-- CONTENEDOR PRINCIPAL -->
     <div class="relative z-10 max-w-4xl mx-auto px-6 lg:px-8 pt-28 pb-12 lg:pt-32 lg:pb-20">
 
@@ -192,7 +195,7 @@
 
         <!-- CTA FINAL -->
         <div class="mt-20 text-center">
-            <a href="{{ route('home') }}#contact" class="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white transition-all duration-200 bg-indigo-600 rounded-lg hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-1">
+            <a href="{{ route('public.contact') }}" class="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white transition-all duration-200 bg-indigo-600 rounded-lg hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-1">
                 ¿Hablamos?
                 <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </a>

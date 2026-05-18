@@ -7,7 +7,10 @@ use App\Models\Client;
 use App\Models\Contact;
 use App\Models\ContactMethod;
 use App\Models\Message;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\Rule;
 
 class ContactController extends Controller
 {
@@ -120,11 +123,20 @@ class ContactController extends Controller
         return back()->with('success', 'Contacto eliminado.');
     }
 
-    public function storePublicMessage(Request $request)
+    public function storePublicMessage(Request $request): JsonResponse|RedirectResponse
     {
-        $isBookingRequest = $request->input('form_context') === 'booking';
+        $formContext = (string) $request->input('form_context', '');
 
-        // 1. Validar (Laravel automáticamente devolverá JSON si la petición es AJAX)
+        if ($formContext === 'funnel_whatsapp') {
+            return $this->storeFunnelAsyncChannel($request, 'whatsapp');
+        }
+
+        if ($formContext === 'funnel_email') {
+            return $this->storeFunnelAsyncChannel($request, 'email');
+        }
+
+        $isBookingRequest = $formContext === 'booking';
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => $isBookingRequest
@@ -134,11 +146,15 @@ class ContactController extends Controller
                 ? 'required_if:booking_channel,Llamada telefónica,WhatsApp|nullable|string|max:40'
                 : 'nullable|string|max:40',
             'content' => 'required|string|min:10',
-            'inquiry_type' => 'required|in:web,mobile,business',
+            'inquiry_type' => 'required|in:web,mobile,business,careers',
             'booking_channel' => $isBookingRequest
                 ? 'required|in:Videollamada,Llamada telefónica,WhatsApp'
                 : 'nullable|string',
-            'web_products' => 'required_if:inquiry_type,web|array',
+            'web_products' => [
+                Rule::requiredIf(fn () => $request->input('inquiry_type') === 'web' && ! $isBookingRequest),
+                'nullable',
+                'array',
+            ],
             'web_products.*' => 'string|in:basic_web,crm,erp,cms_backoffice,other',
         ], [
             'content.min' => 'El mensaje debe tener al menos 10 caracteres para poder ayudarte mejor.',
@@ -148,10 +164,15 @@ class ContactController extends Controller
             'web_products.required_if' => 'Selecciona al menos un producto para tu web.',
         ]);
 
+        if ($isBookingRequest && $request->input('inquiry_type') === 'web' && empty($validated['web_products'])) {
+            $validated['web_products'] = ['other'];
+        }
+
         $inquiryLabels = [
             'web' => 'Página web',
-            'mobile' => 'App Android',
-            'business' => 'Contacto empresarial',
+            'mobile' => 'App móvil',
+            'business' => 'Consultoría / empresa',
+            'careers' => 'Talento y colaboración',
         ];
         $inquiryLabel = $inquiryLabels[$validated['inquiry_type']] ?? $validated['inquiry_type'];
 
@@ -176,11 +197,11 @@ class ContactController extends Controller
         } elseif ($validated['inquiry_type'] === 'business') {
             $content = "Nombre empresarial: {$validated['name']}\n\nMotivo de contacto:\n".$validated['content'];
         } elseif ($validated['inquiry_type'] === 'mobile') {
-            $content = "Tipo de proyecto: App Android\n\nDescripción:\n".$validated['content'];
+            $content = "Tipo de proyecto: App móvil\n\nDescripción:\n".$validated['content'];
+        } elseif ($validated['inquiry_type'] === 'careers') {
+            $content = "Propuesta profesional / talento:\n\n".$validated['content'];
         }
 
-        // 2. Crear el mensaje
-        // No pasamos contact_id porque es un desconocido (null)
         $message = Message::create([
             'sender_name' => $validated['name'],
             'sender_email' => $validated['email'] ?? 'sin-email@booking.local',
@@ -189,17 +210,91 @@ class ContactController extends Controller
             'is_read' => false,
         ]);
 
+        return $this->respondAfterPublicMessage($request, $message);
+    }
+
+    /**
+     * @param  'whatsapp'|'email'  $channel
+     */
+    private function storeFunnelAsyncChannel(Request $request, string $channel): JsonResponse|RedirectResponse
+    {
+        $rules = [
+            'name' => 'required|string|max:255',
+            'content' => 'required|string|min:10',
+            'inquiry_type' => 'required|in:web,mobile,business,careers',
+        ];
+        if ($channel === 'whatsapp') {
+            $rules['phone'] = 'required|string|max:40';
+            $rules['email'] = 'nullable|email|max:255';
+        } else {
+            $rules['email'] = 'required|email|max:255';
+            $rules['phone'] = 'nullable|string|max:40';
+        }
+
+        $validated = $request->validate($rules, [
+            'content.min' => 'El mensaje debe tener al menos 10 caracteres para poder ayudarte mejor.',
+        ]);
+
+        $inquiryLabels = [
+            'web' => 'Página web',
+            'mobile' => 'App móvil',
+            'business' => 'Consultoría / empresa',
+            'careers' => 'Talento y colaboración',
+        ];
+        $inquiryLabel = $inquiryLabels[$validated['inquiry_type']] ?? $validated['inquiry_type'];
+
+        if ($channel === 'whatsapp') {
+            $lines = [
+                'Prefiere seguir por WhatsApp.',
+                'Teléfono: '.$validated['phone'],
+            ];
+            if (! empty($validated['email'])) {
+                $lines[] = 'Email (opcional): '.$validated['email'];
+            }
+            $lines[] = '';
+            $lines[] = 'Detalle:';
+            $lines[] = $validated['content'];
+            $content = implode("\n", $lines);
+            $subject = 'WhatsApp ('.$inquiryLabel.') — '.$validated['name'];
+            $senderEmail = $validated['email'] ?? 'sin-email@whatsapp.local';
+        } else {
+            $lines = [
+                'Prefiere seguir por correo electrónico.',
+                'Email: '.$validated['email'],
+            ];
+            if (! empty($validated['phone'])) {
+                $lines[] = 'Teléfono (opcional): '.$validated['phone'];
+            }
+            $lines[] = '';
+            $lines[] = 'Detalle:';
+            $lines[] = $validated['content'];
+            $content = implode("\n", $lines);
+            $subject = 'Correo ('.$inquiryLabel.') — '.$validated['name'];
+            $senderEmail = $validated['email'];
+        }
+
+        $message = Message::create([
+            'sender_name' => $validated['name'],
+            'sender_email' => $senderEmail,
+            'subject' => $subject,
+            'content' => $content,
+            'is_read' => false,
+        ]);
+
+        return $this->respondAfterPublicMessage($request, $message);
+    }
+
+    private function respondAfterPublicMessage(Request $request, Message $message): JsonResponse|RedirectResponse
+    {
         $channels = config('services.contact_alerts.channels', []);
         if (is_array($channels) && ! empty($channels)) {
             SendNewContactAlert::dispatch($message);
         }
 
-        // 3. Respuesta Profesional
-        // Si la petición viene de nuestro script Fetch (AJAX):
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => '¡Tu mensaje está en camino! Te contestaré lo antes posible.'
+                'message' => '¡Tu mensaje está en camino! Te contestaré lo antes posible.',
             ]);
         }
 

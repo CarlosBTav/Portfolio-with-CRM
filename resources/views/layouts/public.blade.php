@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Carlos Codex | Full Stack Developer')</title>
     <meta name="description" content="@yield('meta_description', 'Desarrollo de aplicaciones y webs para particulares y empresas. +7 años desarrollando software. Cuéntame tu idea y te devolveré un producto real.')"> <!-- Snippet en búsqueda de Google -->
     <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('img/favicon.png') }}?v={{ filemtime(public_path('img/favicon.png')) }}">
@@ -22,6 +23,7 @@
         'resources/css/spotlight.css', 
         'resources/js/spotlight.js',
         'resources/js/bg_code.js',
+        'resources/js/ai-dots-touch.js',
     ])
 
     <!-- Estilos Globales -->
@@ -47,6 +49,9 @@
         #scroll-progress-container { position: fixed; right: 0; top: 0; width: 4px; height: 100vh; height: 100lvh; background-color: rgba(229, 231, 235, 0.3); z-index: 100; }
         .dark #scroll-progress-container { background-color: rgba(55, 65, 81, 0.3); }
         #scroll-progress-bar { width: 100%; height: 0%; background: linear-gradient(to bottom, #818cf8, #4f46e5); box-shadow: 0 0 8px rgba(79, 70, 229, 0.5); transition: height 0.1s ease-out; }
+
+        /* Scroll-to-top FAB */
+        #scrollToTopBtn { transition: opacity 300ms ease, transform 300ms ease; will-change: opacity, transform; }
 
         /* Entrada al cargar: todas las vistas que usan este layout (<main>) */
         @keyframes public-page-enter {
@@ -535,8 +540,8 @@
     <!-- Incluimos el pie de página -->
     @include('partials.footer')
 
-    <!-- BOTÓN SCROLL TO TOP: sin opacity/transform inline (si no, ganan a las clases del script y nunca se ve) -->
-    <div id="scrollToTopBtn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="fixed right-8 z-[80] bottom-8 opacity-0 pointer-events-none translate-y-10 transition-opacity transition-transform duration-300">
+    <!-- BOTÓN SCROLL TO TOP -->
+    <div id="scrollToTopBtn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="fixed right-8 z-[80] bottom-8 opacity-0 pointer-events-none translate-y-10">
         <div class="h-12 w-12 rounded-full bg-indigo-600 hover:bg-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 cursor-pointer flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-colors duration-300" role="button" tabindex="0">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="m18 15-6-6-6 6"></path></svg>
         </div>
@@ -544,32 +549,36 @@
 
     <!-- Scripts Generales de la Interfaz -->
     <script>
-        // 1. Scroll to Top (solo en scroll/resize — evita requestAnimationFrame infinito en móvil)
+        // 1. Scroll to Top
         const scrollBtn = document.getElementById('scrollToTopBtn');
-        const footer = document.getElementById('main-footer');
+        const footer    = document.getElementById('main-footer');
+        let _fabRaf = null;
 
         function syncScrollToTopFab() {
             if (!scrollBtn) return;
+            if (_fabRaf) return;
+            _fabRaf = requestAnimationFrame(() => {
+                _fabRaf = null;
 
-            if (window.scrollY > 300) {
-                scrollBtn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-10');
-                scrollBtn.classList.add('opacity-100', 'translate-y-0');
-            } else {
-                scrollBtn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-10');
-                scrollBtn.classList.remove('opacity-100', 'translate-y-0');
-            }
-
-            const baseBottom = 32;
-            if (footer) {
-                const footerRect = footer.getBoundingClientRect();
-                const windowHeight = window.innerHeight;
-                if (footerRect.top < windowHeight) {
-                    const overlap = windowHeight - footerRect.top;
-                    scrollBtn.style.bottom = (baseBottom + overlap) + 'px';
+                // Visibilidad
+                if (window.scrollY > 300) {
+                    scrollBtn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-10');
+                    scrollBtn.classList.add('opacity-100', 'translate-y-0');
                 } else {
-                    scrollBtn.style.bottom = baseBottom + 'px';
+                    scrollBtn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-10');
+                    scrollBtn.classList.remove('opacity-100', 'translate-y-0');
                 }
-            }
+
+                // Posición: sube por encima del footer si este ya es visible
+                if (footer) {
+                    const gap        = 32; // bottom-8
+                    const footerTop  = footer.getBoundingClientRect().top;
+                    const vh         = window.innerHeight;
+                    scrollBtn.style.bottom = (footerTop < vh
+                        ? gap + (vh - footerTop)
+                        : gap) + 'px';
+                }
+            });
         }
 
         if (scrollBtn) {

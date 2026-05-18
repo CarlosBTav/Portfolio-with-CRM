@@ -53,6 +53,45 @@ class ProjectController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function updateClientsAssignment(Request $request, Project $project)
+    {
+        $validated = $request->validate([
+            'clients' => 'nullable|array',
+            'clients.*' => 'exists:clients,id',
+            'is_internal' => 'required|boolean',
+        ]);
+
+        $wantsInternal = (bool) ($validated['is_internal'] ?? false);
+        $clientIds = array_values(array_unique($validated['clients'] ?? []));
+
+        if ($wantsInternal && $clientIds !== []) {
+            throw ValidationException::withMessages([
+                'clients' => 'No puedes marcar el proyecto como interno y asociar clientes a la vez.',
+            ]);
+        }
+
+        $storeAsInternal = $wantsInternal && $clientIds === [];
+
+        $project->update(['is_internal' => $storeAsInternal]);
+
+        if ($storeAsInternal) {
+            $project->clients()->sync([]);
+        } else {
+            $project->clients()->sync($clientIds);
+        }
+
+        $project->load('clients');
+
+        return response()->json([
+            'is_internal' => (bool) $project->is_internal,
+            'clients' => $project->clients->map(fn (Client $c) => [
+                'id' => $c->id,
+                'commercial_name' => $c->commercial_name,
+                'show_url' => route('clients.show', $c),
+            ])->values(),
+        ]);
+    }
+
     public function create()
     {
         $project = new Project(); 
@@ -68,7 +107,7 @@ class ProjectController extends Controller
 
     public function edit(Project $project)
     {
-        $project->load('links');
+        $project->load(['links', 'clients']);
 
         $technologies = Technology::orderBy('name')->get();
         $clients = Client::orderBy('commercial_name')->get();

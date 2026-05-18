@@ -1,6 +1,7 @@
 {{-- Footer: por encima de main (capas blur/transform en algunas vistas) --}}
 @php
     $isHome = request()->routeIs('home');
+    $contactFunnelHref = route('public.contact');
     $brandMain = config('app.name', 'Portfolio');
     $mail = trim((string) env('APP_CONTACT_EMAIL', ''));
     $gh = trim((string) env('APP_GITHUB_URL', 'https://github.com/CarlosBTav'));
@@ -56,12 +57,15 @@
                         <li>
                             <a href="{{ route('public.services') }}" class="hover:text-teal-400 transition">Servicios</a>
                         </li>
+                        <li>
+                            <a href="{{ $contactFunnelHref }}" class="hover:text-teal-400 transition">Contacto / asistente</a>
+                        </li>
                     </ul>
                 </div>
 
                 {{-- Contacto --}}
                 <div>
-                    <h4 class="text-white font-bold mb-4">Contacto</h4>
+                    <h4 class="text-white font-bold mb-4">Redes</h4>
                     <ul class="space-y-3 text-sm">
                         @if ($loc !== '')
                             <li class="flex items-start gap-3">
@@ -108,11 +112,11 @@
                         @endif
                         @unless ($hasFooterContact)
                             <li>
-                                <a href="{{ $isHome ? '#contact' : route('home') . '#contact' }}" class="inline-flex items-center gap-2 text-teal-200 hover:text-teal-400 transition">
+                                <a href="{{ $contactFunnelHref }}" class="inline-flex items-center gap-2 text-teal-200 hover:text-teal-400 transition">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                                     </svg>
-                                    Formulario de contacto
+                                    Asistente de contacto
                                 </a>
                             </li>
                         @endunless

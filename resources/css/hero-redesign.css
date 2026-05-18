@@ -18,7 +18,8 @@
   --hr-accent-2:         #818cf8;   /* indigo-400 */
   --hr-accent-soft:      #a5b4fc;
   --hr-available:        #22c55e;
-  --hr-dots-fade-w:      19%;
+  --hr-dots-fade-w:      22%;
+  --hr-dots-fade-h:      16%;
 }
 
 /* ── Page wrapper ──────────────────────────────────────────────── */
@@ -265,20 +266,43 @@
   pointer-events: none;
   overflow: hidden;
   --hr-dots-dot: 165, 180, 252;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    black var(--hr-dots-fade-w),
-    black calc(100% - var(--hr-dots-fade-w)),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    black var(--hr-dots-fade-w),
-    black calc(100% - var(--hr-dots-fade-w)),
-    transparent 100%
-  );
+  -webkit-mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 var(--hr-dots-fade-h),
+      #000 calc(100% - var(--hr-dots-fade-h)),
+      transparent 100%
+    ),
+    linear-gradient(
+      to right,
+      transparent 0%,
+      #000 var(--hr-dots-fade-w),
+      #000 calc(100% - var(--hr-dots-fade-w)),
+      transparent 100%
+    );
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 var(--hr-dots-fade-h),
+      #000 calc(100% - var(--hr-dots-fade-h)),
+      transparent 100%
+    ),
+    linear-gradient(
+      to right,
+      transparent 0%,
+      #000 var(--hr-dots-fade-w),
+      #000 calc(100% - var(--hr-dots-fade-w)),
+      transparent 100%
+    );
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  mask-mode: alpha;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
 }
 .hr-dots-panel canvas {
   display: block;

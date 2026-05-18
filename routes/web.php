@@ -37,13 +37,18 @@ Route::get('/servicios', [PortfolioController::class, 'services'])->name('public
 // Rutas de servicios (detalle)
 Route::get('/servicios/desarrollo-web', [PortfolioController::class, 'webDevelopment'])->name('public.services.web');
 Route::get('/servicios/desarrollo-apps', [PortfolioController::class, 'appDevelopment'])->name('public.services.app');
-Route::get('/servicios/preguntas-frecuentes', [PortfolioController::class, 'servicesFaq'])->name('public.services.faq');
+Route::get('/servicios/preguntas-frecuentes', [PortfolioController::class, 'faq'])->name('public.services.faq');
+
+Route::redirect('/preguntas-frecuentes', '/servicios/preguntas-frecuentes', 301);
 
 // Para mensajes de contacto
 Route::post('/contact', [ContactController::class, 'storePublicMessage'])->name('contact.store');
 
 // Ruta para "Sobre mí / Historia"
 Route::get('/sobre-mi',[PortfolioController::class, 'about'])->name('public.about');
+
+// Asistente de contacto (embudo, sin recargas entre pasos)
+Route::get('/contacto', [PortfolioController::class, 'contact'])->name('public.contact');
 
 // CV (solo por enlace directo, sin entrada en el menú público)
 Route::get('/cv', [PortfolioController::class, 'cv'])->name('public.cv');
@@ -58,6 +63,10 @@ Route::get('/presupuesto/{slug?}', [PortfolioController::class, 'quote'])
 Route::get('/documentacion/{slug?}', [PortfolioController::class, 'documentation'])
     ->where('slug', '[A-Za-z0-9\-_]+')
     ->name('public.documentation');
+Route::post('/documentacion/{slug}/apuntes', [PortfolioController::class, 'storeDocumentationNote'])
+    ->middleware('throttle:12,1')
+    ->where('slug', '[A-Za-z0-9\-_]+')
+    ->name('public.documentation.notes.store');
 
 /*
 |--------------------------------------------------------------------------
@@ -74,6 +83,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     Route::patch('projects/reorder', [ProjectController::class, 'reorder'])->name('projects.reorder');
+
+    Route::patch('projects/{project}/clients-assignment', [ProjectController::class, 'updateClientsAssignment'])
+        ->name('projects.clients-assignment');
 
     // Esto crea automáticamente las rutas: projects.index, projects.create, projects.store...
     Route::resource('projects', ProjectController::class);
@@ -97,6 +109,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // CRUD de Mensajes
     Route::resource('messages', MessageController::class)->only(['index', 'show', 'destroy']);
     Route::put('/messages/{message}/assign', [MessageController::class, 'assign'])->name('messages.assign');
+
+    Route::delete('/documentacion/{slug}/apuntes/{note}', [PortfolioController::class, 'destroyDocumentationNote'])
+        ->where('slug', '[A-Za-z0-9\-_]+')
+        ->name('documentation.notes.destroy');
 
     // Perfil de Usuario
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -176,28 +176,33 @@
         overflow: visible;
       }
       .page {
-        --cv-page-vm: clamp(2px, 0.6vmin, 6px);
-        margin: var(--cv-page-vm) auto;
+        --cv-page-vm: clamp(8px, 1.2vmin, 14px);
+        margin: var(--cv-page-vm) auto 28px;
         max-height: none;
         overflow: hidden;
         zoom: 1;
         transform: translateZ(0) scale(1);
         transform-origin: top center;
-        will-change: transform, max-width, margin, zoom;
+        will-change: transform, margin;
         transition:
           transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-          max-width 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-          margin 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-          zoom 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+          margin 0.5s cubic-bezier(0.22, 1, 0.36, 1);
       }
       html.cv-expanded {
         overflow-y: auto;
       }
+      /*
+        Ampliar = escala uniforme del mismo layout (mismo max-width → mismos saltos de línea).
+        No se toca max-width para evitar que columnas y texto se redistribuyan distinto.
+      */
       html.cv-expanded .page {
-        max-width: min(1120px, calc((100% - 24px) / 1.28));
         margin: 20px auto 48px;
-        zoom: 1.28;
-        transform: translateZ(0) scale(1.035);
+        overflow: visible;
+        zoom: 1;
+        transform: translateZ(0) scale(1.28);
+      }
+      html.cv-expanded .cv-viewport {
+        padding-bottom: 320px;
       }
 
       /*
@@ -759,6 +764,9 @@ rgb(235, 230, 221) 100%
       border-color: #c75d2c;
       color: #c75d2c;
     }
+    html.cv-expand-unavailable .cv-expand-btn {
+      display: none;
+    }
     .cv-btn.cv-btn--pressed {
       background: #fef6f1;
       border-color: #c75d2c;
@@ -889,11 +897,11 @@ rgb(235, 230, 221) 100%
         </span>
         <span class="cv-expand-label">Ampliar</span>
       </button>
-      <a href="{{ route('public.cv.download') }}" class="cv-btn" download>
+      <button type="button" class="cv-btn" id="cv-download-btn" aria-label="Descargar CV en PDF">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Descargar
-      </a>
-      <button type="button" class="cv-btn" id="cv-share-btn" aria-label="Copiar enlace al portapapeles">
+        <span class="cv-download-label">Descargar</span>
+      </button>
+      <button type="button" class="cv-btn" id="cv-share-btn" aria-label="Copiar enlace al portafolio">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Compartir
       </button>
@@ -901,7 +909,7 @@ rgb(235, 230, 221) 100%
   </div>
 </header>
 <div class="cv-toolbar-spacer" id="cv-toolbar-spacer" aria-hidden="true"></div>
-<div class="cv-toast" id="cv-toast" role="status" aria-live="polite">Enlace copiado al portapapeles</div>
+<div class="cv-toast" id="cv-toast" role="status" aria-live="polite">Enlace copiado al portfolio</div>
 @endif
 @if(empty($downloadMode ?? false))
 <div class="cv-viewport" id="cv-viewport">
@@ -1163,12 +1171,220 @@ rgb(235, 230, 221) 100%
 @endif
 @stack('scripts')
 @if(empty($downloadMode ?? false))
+<script src="{{ asset('js/html2canvas.min.js') }}"></script>
+<script src="{{ asset('js/jspdf.umd.min.js') }}"></script>
+<script>
+(function () {
+  var btn = document.getElementById('cv-download-btn');
+  var pageEl = document.querySelector('.page');
+  var toast = document.getElementById('cv-toast');
+  if (!btn || !pageEl) return;
+
+  var PDF_FILENAME = 'carlos-burgos-tavora-cv.pdf';
+  var busy = false;
+
+  function showStatus(msg) {
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.add('cv-toast--visible');
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(function () {
+      toast.classList.remove('cv-toast--visible');
+    }, 2800);
+  }
+
+  function waitForCvAssets() {
+    var fontPromise = document.fonts && document.fonts.ready
+      ? document.fonts.ready
+      : Promise.resolve();
+
+    var imagePromises = Array.prototype.slice.call(pageEl.querySelectorAll('img')).map(function (img) {
+      if (img.complete && img.naturalWidth > 0) {
+        return Promise.resolve();
+      }
+
+      return new Promise(function (resolve) {
+        img.addEventListener('load', resolve, { once: true });
+        img.addEventListener('error', resolve, { once: true });
+      });
+    });
+
+    return Promise.all([fontPromise].concat(imagePromises));
+  }
+
+  function collectCvLinkAreas(pageWidth, pageHeight) {
+    var pageRect = pageEl.getBoundingClientRect();
+    if (!pageRect.width || !pageRect.height || !pageWidth || !pageHeight) {
+      return [];
+    }
+
+    var transformScaleX = pageRect.width / pageWidth;
+    var transformScaleY = pageRect.height / pageHeight;
+    if (!transformScaleX || !transformScaleY) {
+      return [];
+    }
+
+    return Array.prototype.slice.call(pageEl.querySelectorAll('a[href]'))
+      .map(function (anchor) {
+        var rawHref = anchor.getAttribute('href');
+        if (!rawHref) return null;
+
+        var href = rawHref.trim();
+        if (!href) return null;
+
+        // Keep actionable links in the generated PDF.
+        if (!href.startsWith('mailto:') && !href.startsWith('http://') && !href.startsWith('https://')) {
+          return null;
+        }
+
+        var rect = anchor.getBoundingClientRect();
+        var width = rect.width / transformScaleX;
+        var height = rect.height / transformScaleY;
+        if (width < 1 || height < 1) {
+          return null;
+        }
+
+        var x = (rect.left - pageRect.left) / transformScaleX;
+        var y = (rect.top - pageRect.top) / transformScaleY;
+
+        if (x >= pageWidth || y >= pageHeight || (x + width) <= 0 || (y + height) <= 0) {
+          return null;
+        }
+
+        return {
+          href: href,
+          x: Math.max(0, x),
+          y: Math.max(0, y),
+          width: Math.min(width, pageWidth - x),
+          height: Math.min(height, pageHeight - y),
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function downloadPdf() {
+    if (busy) return;
+    if (typeof html2canvas === 'undefined' || !window.jspdf || !window.jspdf.jsPDF) {
+      showStatus('No se pudo cargar el generador PDF. Recarga la página.');
+      return;
+    }
+
+    busy = true;
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    if (toast) {
+      toast._lastAction = 'download';
+    }
+    showStatus('Generando PDF…');
+
+    waitForCvAssets()
+      .then(function () {
+        var pageWidth = Math.ceil(pageEl.scrollWidth);
+        var pageHeight = Math.ceil(pageEl.scrollHeight) + 2;
+
+        return html2canvas(pageEl, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        scrollX: 0,
+        scrollY: -window.scrollY,
+        width: pageWidth,
+        height: pageHeight,
+        windowWidth: pageWidth,
+        windowHeight: pageHeight,
+          onclone: function (doc) {
+            doc.documentElement.classList.remove('cv-expanded', 'cv-scrollbar-slim');
+            var clonedPage = doc.querySelector('.page');
+            if (clonedPage) {
+              clonedPage.style.margin = '0';
+              clonedPage.style.transform = 'none';
+              clonedPage.style.boxShadow = 'none';
+              clonedPage.style.transition = 'none';
+            }
+          },
+        });
+      })
+      .then(function (canvas) {
+        if (!canvas || canvas.width < 1 || canvas.height < 1) {
+          throw new Error('CV canvas is empty');
+        }
+
+        var pageWidth = Math.ceil(pageEl.scrollWidth);
+        var pageHeight = Math.ceil(pageEl.scrollHeight) + 2;
+        var linkAreas = collectCvLinkAreas(pageWidth, pageHeight);
+        var pdfWidth = canvas.width * 0.75;
+        var pdfHeight = canvas.height * 0.75;
+        var pdfScaleX = pdfWidth / pageWidth;
+        var pdfScaleY = pdfHeight / pageHeight;
+        var imgData = canvas.toDataURL('image/jpeg', 0.96);
+        var pdf = new window.jspdf.jsPDF({
+          orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
+          unit: 'pt',
+          format: [pdfWidth, pdfHeight],
+          compress: true,
+        });
+
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        if (typeof pdf.link === 'function' && linkAreas.length) {
+          linkAreas.forEach(function (linkArea) {
+            pdf.link(
+              linkArea.x * pdfScaleX,
+              linkArea.y * pdfScaleY,
+              linkArea.width * pdfScaleX,
+              linkArea.height * pdfScaleY,
+              { url: linkArea.href }
+            );
+          });
+        }
+        pdf.save(PDF_FILENAME);
+
+        if (!toast || toast._lastAction === 'download') {
+          showStatus('PDF descargado');
+        }
+      })
+      .catch(function () {
+        if (!toast || toast._lastAction === 'download') {
+          showStatus('Error al generar el PDF. Inténtalo de nuevo.');
+        }
+      })
+      .finally(function () {
+        busy = false;
+        btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+      });
+  }
+
+  btn.addEventListener('click', downloadPdf);
+
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('descargar') === 'pdf') {
+    if (window.history && window.history.replaceState) {
+      var cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+    function triggerAutoDownload() {
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () {
+          setTimeout(downloadPdf, 200);
+        });
+      } else {
+        setTimeout(downloadPdf, 500);
+      }
+    }
+    if (document.readyState === 'complete') {
+      triggerAutoDownload();
+    } else {
+      window.addEventListener('load', triggerAutoDownload, { once: true });
+    }
+  }
+})();
+</script>
 <script>
 (function () {
   var btn = document.getElementById('cv-share-btn');
   var toast = document.getElementById('cv-toast');
   if (!btn || !toast) return;
-  var hideTimer;
   function positionToastBelowShare() {
     var gap = 8;
     var margin = 10;
@@ -1191,10 +1407,12 @@ rgb(235, 230, 221) 100%
     toast.style.left = leftPx + 'px';
   }
   function showToast() {
+    toast._lastAction = 'share';
+    toast.textContent = 'Enlace copiado al portfolio';
     positionToastBelowShare();
     toast.classList.add('cv-toast--visible');
-    clearTimeout(hideTimer);
-    hideTimer = setTimeout(function () { toast.classList.remove('cv-toast--visible'); }, 2200);
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(function () { toast.classList.remove('cv-toast--visible'); }, 2200);
   }
   window.addEventListener('resize', positionToastBelowShare, { passive: true });
   if (document.readyState === 'loading') {
@@ -1203,7 +1421,7 @@ rgb(235, 230, 221) 100%
     positionToastBelowShare();
   }
   btn.addEventListener('click', function () {
-    var url = window.location.href.replace(/#.*$/, '');
+    var url = @json(url(route('public.cv')));
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(showToast).catch(function () {
         fallbackCopy(url);
@@ -1346,6 +1564,9 @@ rgb(235, 230, 221) 100%
   var root = document.documentElement;
   var labelEl = btn.querySelector('.cv-expand-label');
   var mqDesk = window.matchMedia('(min-width: 721px)');
+  var basePageMaxWidth = 920;
+  var expandScale = 1.28;
+  var expandViewportPadding = 24;
 
   function motionOk() {
     return !(typeof window.matchMedia === 'function'
@@ -1353,7 +1574,11 @@ rgb(235, 230, 221) 100%
   }
 
   function scrollbarSlideOk() {
-    return mqDesk.matches && motionOk();
+    return canExpand() && motionOk();
+  }
+
+  function canExpand() {
+    return mqDesk.matches && root.clientWidth > (basePageMaxWidth * expandScale + expandViewportPadding);
   }
 
   function scheduleScrollbarSlideIn() {
@@ -1373,7 +1598,23 @@ rgb(235, 230, 221) 100%
     }
   }
 
+  function applyExpandAvailability() {
+    var available = canExpand();
+    root.classList.toggle('cv-expand-unavailable', !available);
+    btn.hidden = !available;
+    btn.setAttribute('aria-hidden', available ? 'false' : 'true');
+
+    if (!available && root.classList.contains('cv-expanded')) {
+      setExpanded(false);
+    }
+  }
+
   function setExpanded(enabled) {
+    if (enabled && !canExpand()) {
+      applyExpandAvailability();
+      return;
+    }
+
     if (!scrollbarSlideOk()) {
       root.classList.remove('cv-scrollbar-slim');
       root.classList.toggle('cv-expanded', enabled);
@@ -1391,14 +1632,24 @@ rgb(235, 230, 221) 100%
   }
 
   btn.addEventListener('click', function () {
+    applyExpandAvailability();
+    if (!canExpand()) return;
+
     var isExpanded = root.classList.contains('cv-expanded');
     setExpanded(!isExpanded);
   });
 
+  window.addEventListener('resize', applyExpandAvailability, { passive: true });
+  window.addEventListener('load', applyExpandAvailability, { passive: true });
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setExpanded(false); });
+    document.addEventListener('DOMContentLoaded', function () {
+      setExpanded(false);
+      applyExpandAvailability();
+    });
   } else {
     setExpanded(false);
+    applyExpandAvailability();
   }
 })();
 </script>

@@ -51,7 +51,8 @@
           --hr-accent-2: #6366f1;
           --hr-accent-soft: #7c83f7;
           --hr-available: #15803d;
-          --hr-dots-fade-w: 19%;
+          --hr-dots-fade-w: 22%;
+          --hr-dots-fade-h: 16%;
           --hr-idea-card-bg: rgba(255, 255, 255, 0.92);
           --hr-vig-mid: rgba(241, 245, 249, 0.5);
           --hr-vig-edge: rgba(241, 245, 249, 0.9);
@@ -92,7 +93,8 @@
           --hr-accent-2: #818cf8;
           --hr-accent-soft: #7f90f6;
           --hr-available: #22c55e;
-          --hr-dots-fade-w: 19%;
+          --hr-dots-fade-w: 22%;
+          --hr-dots-fade-h: 16%;
           --hr-idea-card-bg: rgba(20, 22, 30, 0.82);
           --hr-vig-mid: rgba(5, 5, 7, 0.55);
           --hr-vig-edge: rgba(5, 5, 7, 0.85);
@@ -324,6 +326,161 @@
           position: relative;
         }
 
+        #contact .hr-contact-card {
+          overflow: hidden;
+          isolation: isolate;
+          border-color: var(--hr-border-grid);
+          background:
+            radial-gradient(circle at top left, rgba(99, 102, 241, 0.16), transparent 34%),
+            linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.92));
+          box-shadow: 0 24px 70px rgba(15, 23, 42, 0.10);
+        }
+        html.dark #contact .hr-contact-card {
+          background:
+            radial-gradient(circle at top left, rgba(129, 140, 248, 0.24), transparent 36%),
+            linear-gradient(135deg, rgba(18, 19, 28, 0.98), rgba(10, 11, 18, 0.94));
+          box-shadow: 0 28px 80px rgba(0, 0, 0, 0.44);
+        }
+        #contact .hr-contact-card::before {
+          content: "";
+          position: absolute;
+          inset: 18px 18px auto auto;
+          width: 160px;
+          height: 160px;
+          border-radius: 999px;
+          background: rgba(99, 102, 241, 0.12);
+          filter: blur(28px);
+          z-index: -1;
+        }
+        #contact .hr-contact-card::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(99, 102, 241, 0.06) 1px, transparent 1px);
+          background-size: 34px 34px;
+          mask-image: linear-gradient(135deg, transparent 0%, rgba(0, 0, 0, 0.72) 45%, transparent 100%);
+          pointer-events: none;
+          z-index: -1;
+        }
+        .hr-contact-content {
+          display: grid;
+          justify-items: center;
+          gap: 20px;
+          padding: 18px 0;
+          text-align: center;
+        }
+        .hr-contact-kicker {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 7px 12px;
+          border: 1px solid rgba(99, 102, 241, 0.22);
+          border-radius: 999px;
+          background: rgba(99, 102, 241, 0.08);
+          color: var(--hr-accent-2);
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .hr-contact-kicker span {
+          width: 7px;
+          height: 7px;
+          border-radius: 999px;
+          background: var(--hr-accent-2);
+          box-shadow: 0 0 0 5px rgba(99, 102, 241, 0.12);
+        }
+        .hr-contact-title {
+          margin: 0;
+          max-width: 660px;
+          color: var(--hr-heading);
+          font-size: clamp(2rem, 4vw, 3.35rem);
+          line-height: 1.04;
+          letter-spacing: -0.045em;
+          font-weight: 800;
+        }
+        .hr-contact-copy {
+          margin: -6px 0 0;
+          max-width: 560px;
+          color: var(--hr-text-muted);
+          font-size: clamp(1rem, 2vw, 1.18rem);
+          line-height: 1.7;
+        }
+        .hr-contact-points {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 10px;
+          margin-top: 2px;
+        }
+        .hr-contact-points span {
+          padding: 8px 12px;
+          border: 1px solid var(--hr-border);
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.62);
+          color: var(--hr-text);
+          font-size: 13px;
+          font-weight: 600;
+        }
+        html.dark .hr-contact-points span {
+          background: rgba(255, 255, 255, 0.05);
+        }
+        .hr-contact-actions {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          align-items: center;
+          gap: 14px;
+          margin-top: 8px;
+        }
+        .hr-contact-primary {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          padding: 14px 22px;
+          border-radius: 16px;
+          background: linear-gradient(135deg, #4f46e5, #7c3aed);
+          color: #fff;
+          font-weight: 800;
+          box-shadow: 0 18px 36px rgba(79, 70, 229, 0.28);
+          transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        }
+        .hr-contact-primary:hover {
+          transform: translateY(-2px);
+          filter: saturate(1.08);
+          box-shadow: 0 22px 44px rgba(79, 70, 229, 0.36);
+        }
+        .hr-contact-primary:active {
+          transform: translateY(0) scale(0.99);
+        }
+        .hr-contact-primary svg {
+          width: 18px;
+          height: 18px;
+          transition: transform 0.2s ease;
+        }
+        .hr-contact-primary:hover svg {
+          transform: translateX(3px);
+        }
+        .hr-contact-secondary {
+          color: var(--hr-text-muted);
+          font-size: 14px;
+          font-weight: 700;
+          transition: color 0.2s ease;
+        }
+        .hr-contact-secondary:hover {
+          color: var(--hr-accent-2);
+        }
+        @media (max-width: 640px) {
+          #contact .hr-contact-card { padding: 24px 18px; }
+          .hr-contact-content { padding: 12px 0; }
+          .hr-contact-actions,
+          .hr-contact-primary { width: 100%; }
+          .hr-contact-secondary { padding: 6px 0; }
+        }
+
         /* Skill cards: CTA bajo la tarjeta — en móvil al entrar en vista; en desktop al hover */
         .skill-card .skill-cta-hint {
           opacity: 0;
@@ -376,10 +533,19 @@
           align-items: center;
           justify-content: center;
           gap: 16px;
-          overflow-y: auto;
-          overscroll-behavior: contain;
+          overflow: visible;
           pointer-events: none;
           padding: 4px;
+        }
+        .skills-modal-panel {
+          max-height: calc(min(92dvh, 920px) - 8px);
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          scrollbar-width: none;
+          will-change: transform, opacity;
+        }
+        .skills-modal-panel::-webkit-scrollbar {
+          display: none;
         }
         @media (min-width: 768px) {
           .skills-modal-stage {
@@ -818,8 +984,20 @@
           position: absolute; left: -30%; right: -30%; top: 0; bottom: 0;
           z-index: 1;
           pointer-events: none; overflow: hidden;
-          -webkit-mask-image: linear-gradient(to right, transparent 0%, black var(--hr-dots-fade-w), black calc(100% - var(--hr-dots-fade-w)), transparent 100%);
-          mask-image:         linear-gradient(to right, transparent 0%, black var(--hr-dots-fade-w), black calc(100% - var(--hr-dots-fade-w)), transparent 100%);
+          /* Fade alpha on all edges so the grid never hard-cuts at the hero bounds */
+          -webkit-mask-image:
+            linear-gradient(to bottom, transparent 0%, #000 var(--hr-dots-fade-h), #000 calc(100% - var(--hr-dots-fade-h)), transparent 100%),
+            linear-gradient(to right, transparent 0%, #000 var(--hr-dots-fade-w), #000 calc(100% - var(--hr-dots-fade-w)), transparent 100%);
+          mask-image:
+            linear-gradient(to bottom, transparent 0%, #000 var(--hr-dots-fade-h), #000 calc(100% - var(--hr-dots-fade-h)), transparent 100%),
+            linear-gradient(to right, transparent 0%, #000 var(--hr-dots-fade-w), #000 calc(100% - var(--hr-dots-fade-w)), transparent 100%);
+          -webkit-mask-composite: source-in;
+          mask-composite: intersect;
+          mask-mode: alpha;
+          -webkit-mask-size: 100% 100%;
+          mask-size: 100% 100%;
+          -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
         }
         .hr-dots-panel canvas { display: block; width: 100%; height: 100%; background-color: transparent; }
         .hr-photo-glow {
@@ -1108,7 +1286,7 @@
 
                     {{-- CTAs --}}
                     <div class="hr-cta-row">
-                        <a class="hr-btn hr-btn-primary" href="#contact">
+                        <a class="hr-btn hr-btn-primary" href="{{ route('public.contact') }}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
                             Solicitar proyecto
                         </a>
@@ -1147,10 +1325,8 @@
                 {{-- ── RIGHT: dots panel + portrait --}}
                 <div class="hr-hero-right">
                     <div class="hr-photo-stage">
-                        {{-- Dots background (wave animation + cursor glow) --}}
-                        <div class="hr-dots-panel" id="hr-dots-panel" aria-hidden="true">
-                            <canvas class="hr-dots-canvas"></canvas>
-                        </div>
+                        {{-- Dots background (shared x-ai-dots-background component) --}}
+                        <x-ai-dots-background variant="hero" :waves-overlay="false" />
                         <div class="hr-photo-glow" aria-hidden="true"></div>
                         <img class="hr-portrait-inline hr-portrait-light"
                              src="{{ asset('img/me-noBg-light.webp') }}"
@@ -1303,7 +1479,7 @@
                 <li><x-icons.check />Paneles administrativos</li>
                 <li><x-icons.check />Integraciones externas</li>
               </ul>
-              <a href="{{ route('home', ['service' => 'custom-solutions']) }}#contact" class="pill-cta">Hablar de mi caso</a>
+              <a href="{{ route('public.contact', ['interest' => 'web']) }}" class="pill-cta">Hablar de mi caso</a>
             </div>
           </div>
 
@@ -1451,7 +1627,7 @@
                     x-transition:leave="ease-in duration-300"
                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                     x-transition:leave-end="opacity-0 translate-y-8 sm:scale-95"
-                    class="relative z-20 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-500 pointer-events-auto">
+                    class="skills-modal-panel relative z-20 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-xl border border-gray-200 dark:border-gray-700 transition-all duration-500 pointer-events-auto">
                     <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
                         <div class="flex items-center gap-3">
                             <template x-if="activeSkill">
@@ -1491,7 +1667,7 @@
                     x-transition:leave="transition-all duration-300 ease-in"
                     x-transition:leave-start="opacity-100 mt-4 md:mt-0 md:ml-6 scale-100"
                     x-transition:leave-end="opacity-0 !-mt-[20rem] md:!mt-0 md:!-ml-[24rem] scale-95"
-                    class="relative z-10 w-full max-w-sm bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-indigo-100 dark:border-gray-700 pointer-events-auto mt-4 md:mt-0 md:ml-6">
+                    class="skills-modal-panel relative z-10 w-full max-w-sm bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-indigo-100 dark:border-gray-700 pointer-events-auto mt-4 md:mt-0 md:ml-6">
                     <div class="p-6">
                         <div class="flex justify-between items-start mb-4">
                             <img :src="activeTech?.badge" :alt="activeTech?.name" class="h-8 rounded shadow-sm">
@@ -1543,77 +1719,41 @@
 
     <!--
     |------------------------------------------------------------------|
-    |  ##########             CONTACT SECTION              ##########  |
+    |  ##########        CONTACT (acceso al asistente)      ##########  |
     |------------------------------------------------------------------|
     -->
-    <section id="contact" class="relative z-10 py-24 transition-colors duration-300 mx-3 md:mx-6 lg:mx-10 mt-8 mb-8">
-        <div class="max-w-screen-md mx-auto px-4 relative z-10">
-            <div class="hr-section-card">
-            <div class="text-center mb-12" data-reveal>
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
-                    Hablemos de tu proyecto
-                </h2>
-                <div class="w-24 h-1.5 bg-gradient-to-r from-indigo-500 to-purple-500 mt-5 rounded-full mx-auto"></div>
-                @if (session('status'))
-                    <div class="mt-6 p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-xl border border-green-200 dark:border-green-800/50 flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        {{ session('status') }}
+    <section id="contact" class="relative z-10 py-24 transition-colors duration-300 mx-3 md:mx-6 lg:mx-10 mt-8 mb-10">
+        <div class="max-w-screen-lg mx-auto px-4 relative z-10">
+            <div class="hr-section-card hr-contact-card" data-reveal>
+                <div class="hr-contact-content">
+                    <div class="hr-contact-kicker">
+                        <span aria-hidden="true"></span>
+                        Nuevo proyecto
                     </div>
-                @else
-                    <p class="mt-5 text-lg text-gray-600 dark:text-gray-300 max-w-xl mx-auto">
-                        Puedes escribirme <span class="font-semibold">sin compromiso</span> para contarme tu idea de proyecto.
-                        Cuéntame qué necesitas y te responderé con propuestas y próximos pasos claros.
+                    <h2 class="hr-contact-title">
+                        ¿Tienes una idea en mente?
+                    </h2>
+                    <p class="hr-contact-copy">
+                        Cuéntame qué quieres construir y te responderé con una primera orientación clara.
                     </p>
-                    <div class="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold">
-                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-200 dark:border-indigo-800/60 hover:scale-105 transition-transform"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>Portfolios</span>
-                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800/60 hover:scale-105 transition-transform"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>CRMs</span>
-                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-800/60 hover:scale-105 transition-transform"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>ERPs</span>
-                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-100 dark:bg-sky-900/40 dark:text-sky-200 dark:border-sky-800/60 hover:scale-105 transition-transform"><span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>Apps móviles</span>
+                    <div class="hr-contact-points" aria-label="Ventajas del contacto">
+                        <span>Sin compromiso</span>
+                        <span>Respuesta en menos de 24 h</span>
+                        <span>Por el canal que prefieras</span>
                     </div>
-                @endif
-            </div>
-
-            <div class="relative overflow-hidden" data-reveal data-reveal-delay="150">
-                <form id="contactForm" action="{{ route('contact.store') }}" method="POST" class="space-y-6 relative z-10" novalidate>
-                    @csrf
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-1.5">
-                            <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre completo</label>
-                            <input type="text" id="name" name="name" value="{{ old('name') }}" required
-                                placeholder="Ej. Ana García"
-                                class="w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-indigo-500 focus:ring-indigo-500 transition-colors">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Correo electrónico</label>
-                            <input type="email" id="email" name="email" value="{{ old('email') }}" required
-                                placeholder="hola@gmail.com"
-                                class="w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-indigo-500 focus:ring-indigo-500 transition-colors">
-                        </div>
-                    </div>
-                    <div class="space-y-1.5">
-                        <label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300">¿En qué puedo ayudarte?</label>
-                        <textarea id="content" name="content" rows="4" required
-                            placeholder="Me gustaría hablar contigo sobre el desarrollo de..."
-                            class="w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-indigo-500 focus:ring-indigo-500 transition-colors resize-none">{{ $prefilledContactMessage }}</textarea>
-                    </div>
-                    <div class="pt-2">
-                        <button type="submit" class="w-full sm:w-auto sm:min-w-[200px] flex justify-center items-center gap-2 px-8 py-3.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 active:scale-95 transition-all duration-200 shadow-md hover:shadow-lg shadow-indigo-500/20 ml-auto">
-                            <span>Enviar mensaje</span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                        </button>
-                    </div>
-                </form>
-                <div class="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800/60 relative z-10 flex items-center justify-center">
-                    <p class="text-sm text-gray-500 dark:text-gray-500 flex flex-wrap items-center justify-center gap-1.5 text-center">
-                        <span>¿Prefieres usar el correo?</span>
-                        <a href="mailto:{{ env('APP_CONTACT_EMAIL') }}" class="group inline-flex items-center gap-1.5 font-medium text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                            <x-icons.email class="w-5 h-5 transition-colors duration-300" />
-                            <span>Contáctame por email</span>
+                    <div class="hr-contact-actions">
+                        <a href="{{ route('public.contact') }}" class="hr-contact-primary">
+                            Empezar conversación
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                         </a>
-                    </p>
+                        @if(filled(env('APP_CONTACT_EMAIL')))
+                            <a href="mailto:{{ env('APP_CONTACT_EMAIL') }}" class="hr-contact-secondary">
+                                Escribir por correo
+                            </a>
+                        @endif
+                    </div>
                 </div>
             </div>
-            </div>{{-- /hr-section-card --}}
         </div>
     </section>
 
@@ -1822,55 +1962,6 @@
   }
 })();
 
-/* ────────────────────────────────────────────────────────────────────
-   2. AI dots — port of ai-dots-background.blade.php, scoped to hero
-   ──────────────────────────────────────────────────────────────────── */
-(function initHeroDots() {
-  const root   = document.getElementById('hr-dots-panel');
-  if (!root) return;
-  const canvas = root.querySelector('.hr-dots-canvas');
-  if (!canvas || !canvas.getContext) return;
-  const ctx    = canvas.getContext('2d');
-  let dots     = [], spacing = 22;
-  const mouse  = { x:-1000, y:-1000, px:-1000, py:-1000, speed:0, radius:120, ready:false };
-
-  const waveDefs = [
-    { duration:7500,  alternateReverse:false, radius:64, radiusPulse:0.16, phase:0.2,
-      keys:[{x:-0.3,y:-0.1,rotate:-5,scaleX:0.95,scaleY:0.72},{x:0,y:0.15,rotate:3,scaleX:1.08,scaleY:1.2},{x:0.3,y:-0.15,rotate:-2,scaleX:1.02,scaleY:0.86}],
-      segments:[[[-200,200],[100,50],[300,350],[600,200]],[[600,200],[900,50],[1100,350],[1400,200]]]},
-    { duration:9500,  alternateReverse:true,  radius:50, radiusPulse:0.18, phase:2.1,
-      keys:[{x:0.3,y:0.15,rotate:5,scaleX:1.08,scaleY:1.12},{x:0,y:-0.1,rotate:-2,scaleX:0.92,scaleY:0.84},{x:-0.3,y:0.1,rotate:3,scaleX:1.12,scaleY:1.28}],
-      segments:[[[-200,200],[200,350],[400,50],[700,200]],[[700,200],[1000,350],[1200,50],[1400,200]]]},
-    { duration:11000, alternateReverse:false, radius:58, radiusPulse:0.2,  phase:4.2,
-      keys:[{x:-0.18,y:0.18,rotate:7,scaleX:1.1,scaleY:0.78},{x:0.12,y:-0.06,rotate:-5,scaleX:0.88,scaleY:1.22},{x:0.24,y:0.14,rotate:4,scaleX:1.04,scaleY:0.96}],
-      segments:[[[-200,180],[80,310],[280,90],[540,210]],[[540,210],[800,330],[980,80],[1400,180]]]}
-  ];
-
-  const ss = t => t<0?0:t>1?1:t*t*(3-2*t);
-  const ei = t => 0.5 - Math.cos(t*Math.PI)*0.5;
-  const lp = (a,b,t) => a+(b-a)*t;
-  function rp(x,y,d){ const a=d*Math.PI/180,c=Math.cos(a),s=Math.sin(a); return {x:x*c-y*s,y:x*s+y*c}; }
-  function ik(keys,p){ let s=keys[0],e=keys[1],l=p/0.5; if(p>0.5){s=keys[1];e=keys[2];l=(p-0.5)/0.5;} l=ei(l); return {x:lp(s.x,e.x,l),y:lp(s.y,e.y,l),rotate:lp(s.rotate,e.rotate,l),scaleX:lp(s.scaleX,e.scaleX,l),scaleY:lp(s.scaleY,e.scaleY,l)}; }
-  function wm(def,now){ const tt=now/def.duration,it=Math.floor(tt); let p=tt-it; if((def.alternateReverse&&it%2===0)||(!def.alternateReverse&&it%2===1))p=1-p; return ik(def.keys,p); }
-  function cb(pts,t){ const m=1-t; return [m*m*m*pts[0][0]+3*m*m*t*pts[1][0]+3*m*t*t*pts[2][0]+t*t*t*pts[3][0],m*m*m*pts[0][1]+3*m*m*t*pts[1][1]+3*m*t*t*pts[2][1]+t*t*t*pts[3][1]]; }
-  function ds(px,py,ax,ay,bx,by){ const vx=bx-ax,vy=by-ay,wx=px-ax,wy=py-ay,len=vx*vx+vy*vy||1; let t=(wx*vx+wy*vy)/len; t=Math.max(0,Math.min(1,t)); return Math.hypot(px-(ax+vx*t),py-(ay+vy*t)); }
-  function dtp(px,py,segs){ let cl=Infinity; for(let s=0;s<segs.length;s++){ let last=cb(segs[s],0); for(let i=1;i<=22;i++){ const nx=cb(segs[s],i/22); const d=ds(px,py,last[0],last[1],nx[0],nx[1]); if(d<cl)cl=d; last=nx; } } return cl; }
-  function twv(gx,gy,def,now,cw,ch){ let p=rp(gx-cw*0.5,gy-ch*0.5,10); let lx=p.x+cw,ly=p.y+ch*0.5; const m=wm(def,now); let x=lx-cw-m.x*cw,y=ly-ch*0.5-m.y*ch; p=rp(x,y,-m.rotate); return {x:(p.x/m.scaleX+cw)/Math.max(cw*2,1)*1000,y:(p.y/m.scaleY+ch*0.5)/Math.max(ch,1)*400}; }
-  function wb(gx,gy,cw,ch,now){ let st=0; for(let i=0;i<waveDefs.length;i++){ const def=waveDefs[i]; const p=twv(gx,gy,def,now,cw,ch); const d=dtp(p.x,p.y,def.segments); const r=def.radius*(1+Math.sin(now*0.00055+def.phase)*def.radiusPulse); const b=1-ss(d/r); if(b>st)st=b; } return st; }
-  function vis(gx,gy,cw,ch,now){ let v=wb(gx,gy,cw,ch,now); if(mouse.ready){const dx=mouse.x-gx,dy=mouse.y-gy; v+=Math.exp(-(dx*dx+dy*dy)/(220*220))*0.7;} return Math.max(0,Math.min(1,v)); }
-  function Dot(x,y){ this.x=x; this.y=y; this.bx=x; this.by=y; this.vx=0; this.vy=0; }
-  Dot.prototype.update=function(){ const dx=mouse.x-this.x,dy=mouse.y-this.y,dist=Math.sqrt(dx*dx+dy*dy); if(dist<mouse.radius&&mouse.speed>0.5){ const force=(mouse.radius-dist)/mouse.radius,ang=Math.atan2(dy,dx); let pow=mouse.speed*0.005; if(pow>1.2)pow=1.2; this.vx-=Math.cos(ang)*force*pow; this.vy-=Math.sin(ang)*force*pow; } this.x+=this.vx; this.y+=this.vy; this.vx*=0.9; this.vy*=0.9; this.x+=(this.bx-this.x)*0.007; this.y+=(this.by-this.y)*0.007; };
-  Dot.prototype.draw=function(now,rgb){ const v=vis(this.bx,this.by,canvas.width,canvas.height,now); ctx.globalAlpha=0.18+(1-0.18)*v; ctx.fillStyle='rgb('+rgb+')'; ctx.beginPath(); ctx.arc(this.x,this.y,0.6+(1.55-0.6)*v,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; };
-
-  function syncSize(){ const w=Math.max(1,Math.floor(canvas.clientWidth)),h=Math.max(1,Math.floor(canvas.clientHeight)); if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;} const ds=parseInt(root.dataset.spacing,10); if(ds>=8&&ds<=60)spacing=ds; dots=[]; for(let x=0;x<=canvas.width;x+=spacing)for(let y=0;y<=canvas.height;y+=spacing)dots.push(new Dot(x,y)); }
-  function animate(){ const now=performance.now(); const rgb=getComputedStyle(root).getPropertyValue('--hr-dots-dot').trim()||'165, 180, 252'; ctx.clearRect(0,0,canvas.width,canvas.height); let spd=Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py); if(spd>72)spd=72; mouse.speed+=(spd-mouse.speed)*0.1; mouse.px=mouse.x; mouse.py=mouse.y; for(let i=0;i<dots.length;i++){dots[i].update();dots[i].draw(now,rgb);} requestAnimationFrame(animate); }
-  window.addEventListener('mousemove',(e)=>{ if('pointerType'in e&&e.pointerType==='touch')return; const rect=canvas.getBoundingClientRect(); mouse.x=e.clientX-rect.left; mouse.y=e.clientY-rect.top; if(!mouse.ready){mouse.px=mouse.x;mouse.py=mouse.y;mouse.speed=0;mouse.ready=true;} },{passive:true});
-  window.addEventListener('resize',syncSize);
-  if(window.ResizeObserver)new ResizeObserver(syncSize).observe(canvas.parentElement||root);
-  syncSize(); animate();
-})();
-</script>
-
 <!-- Tarjetas skills técnicas -->
 <script>
 document.addEventListener('alpine:init', () => {
@@ -2031,13 +2122,12 @@ document.addEventListener('alpine:init', () => {
         },
         
         openModal(skillKey) {
+            document.documentElement.classList.add('skills-modal-open');
+            document.body.classList.add('skills-modal-open');
             this.activeSkill = this.skillsData[skillKey];
             this.showTechDetails = false;
             this.activeTech = null;
             this.modalOpen = true;
-            document.documentElement.classList.add('skills-modal-open');
-            document.body.classList.add('skills-modal-open');
-            document.body.classList.add('overflow-hidden');
         },
         closeModal() {
             this.modalOpen = false;
@@ -2048,7 +2138,6 @@ document.addEventListener('alpine:init', () => {
             }, 500); // Espera a que termine la animación css
             document.documentElement.classList.remove('skills-modal-open');
             document.body.classList.remove('skills-modal-open');
-            document.body.classList.remove('overflow-hidden');
         },
         openTech(tech) {
             // Si hace click en la misma que ya está abierta, la cierra

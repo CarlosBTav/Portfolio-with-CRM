@@ -327,39 +327,160 @@
                             $hasOldClients = is_array(old('clients')) && count(old('clients')) > 0;
                             $hasSelectedClients = $hasOldClients || $project->clients->isNotEmpty();
                             $isInternalClient = (bool) old('is_internal', $project->is_internal) && ! $hasSelectedClients;
+                            $selectedClientIds = collect(old('clients', $project->clients->pluck('id')->all()))
+                                ->filter()
+                                ->map(fn ($id) => (int) $id)
+                                ->unique()
+                                ->values();
                         @endphp
-                        <div class="pt-6 border-t border-gray-100" x-data="{ internal: {{ $isInternalClient ? 'true' : 'false' }} }">
-                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
-                                <label class="block text-sm font-bold text-gray-700">Cliente Asociado (Opcional)</label>
-                                @if($project->exists)
-                                    <a href="{{ route('clients.create', ['project' => $project]) }}"
-                                       class="inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                        Nuevo cliente
-                                    </a>
-                                @endif
-                            </div>
-                            <p class="text-xs text-gray-500 mb-4">Marca Interno para proyectos propios sin cliente. Si no eliges nada, el proyecto queda sin asignar.</p>
-                            <label class="flex items-center mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer">
-                                <input type="checkbox" name="is_internal" value="1" x-model="internal"
-                                    @change="if (internal) { $refs.clientCheckbox.forEach((checkbox) => { checkbox.checked = false; }); }"
-                                    class="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded">
-                                <span class="ml-2 block text-sm font-medium text-amber-900">Interno</span>
-                            </label>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-48 overflow-y-auto p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                @foreach($clients as $client)
-                                    <div class="flex items-center">
-                                        <input type="checkbox" name="clients[]" value="{{ $client->id }}" id="client_{{ $client->id }}" x-ref="clientCheckbox"
-                                            @if((is_array(old('clients')) && in_array($client->id, old('clients'))) || ($project->clients->contains($client->id))) checked @endif
-                                            :disabled="internal"
-                                            @change="if ($event.target.checked) { internal = false; }"
-                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50">
-                                        <label for="client_{{ $client->id }}" class="ml-2 block text-sm text-gray-900 cursor-pointer">
-                                            {{ $client->commercial_name }}
-                                        </label>
+                        <div class="pt-6 border-t border-gray-100">
+                            <label class="block text-sm font-bold text-gray-700 mb-3">Cliente Asociado (Opcional)</label>
+                            @if($project->exists)
+                                @php
+                                    $clientsMeta = $clients->map(fn ($c) => [
+                                        'id' => $c->id,
+                                        'name' => $c->commercial_name,
+                                        'show_url' => route('clients.show', $c),
+                                    ])->values()->all();
+                                    $clientsMetaById = collect($clientsMeta)->keyBy('id');
+                                    foreach ($project->clients as $pc) {
+                                        if (! $clientsMetaById->has($pc->id)) {
+                                            $clientsMetaById->put($pc->id, [
+                                                'id' => $pc->id,
+                                                'name' => $pc->commercial_name,
+                                                'show_url' => route('clients.show', $pc),
+                                            ]);
+                                        }
+                                    }
+                                    $clientsMeta = $clientsMetaById->values()->all();
+                                    $projectClientPickerPayload = [
+                                        'csrf' => csrf_token(),
+                                        'patchUrl' => route('projects.clients-assignment', $project),
+                                        'initialInternal' => (bool) $isInternalClient,
+                                        'initialClientIds' => $selectedClientIds->values()->all(),
+                                        'clientsMeta' => $clientsMeta,
+                                    ];
+                                @endphp
+                                <script type="application/json" id="project-client-picker-json-{{ $project->id }}" class="hidden">{!! json_encode($projectClientPickerPayload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
+                                <div
+                                    x-cloak
+                                    x-data="projectClientPicker(JSON.parse(document.getElementById('project-client-picker-json-{{ $project->id }}').textContent.trim()))"
+                                >
+                                    <div class="sr-only" aria-hidden="true">
+                                        <template x-for="id in savedClientIds" :key="'form-client-' + id">
+                                            <input type="hidden" name="clients[]" :value="id">
+                                        </template>
+                                        <input type="hidden" name="is_internal" :value="savedInternal ? 1 : 0">
                                     </div>
-                                @endforeach
-                            </div>
+                                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 mb-3">
+                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                                            <div class="min-w-0 flex-1 space-y-1">
+                                                <p class="text-sm font-medium text-gray-900" x-show="savedInternal">Proyecto interno (sin cliente)</p>
+                                                <div x-show="!savedInternal && savedClientIds.length === 0" class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                                                    <span class="text-gray-600">Seleccionar</span>
+                                                    <span class="text-gray-300" aria-hidden="true">·</span>
+                                                    <a href="{{ route('clients.create', ['project' => $project]) }}"
+                                                       class="inline-flex items-center gap-1 font-medium text-indigo-600 hover:text-indigo-800 hover:underline">
+                                                        <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                                        Nuevo cliente
+                                                    </a>
+                                                </div>
+                                                <ul class="list-none space-y-1 text-sm font-medium text-gray-900" x-show="!savedInternal && savedClientIds.length > 0">
+                                                    <template x-for="id in savedClientIds" :key="'name-' + id">
+                                                        <li class="truncate" x-text="clientName(id)"></li>
+                                                    </template>
+                                                </ul>
+                                            </div>
+                                            <div class="flex shrink-0 flex-wrap items-center gap-2 sm:gap-3">
+                                                <button type="button"
+                                                    @click="pickerPrimaryAction()"
+                                                    :disabled="saving"
+                                                    class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                                                    <span x-text="!pickerOpen ? 'Cambiar' : (saving ? 'Guardando…' : 'Validar el cambio')"></span>
+                                                </button>
+                                                <button type="button"
+                                                    x-show="pickerOpen"
+                                                    x-cloak
+                                                    @click="cancelPicker()"
+                                                    :disabled="saving"
+                                                    class="text-xs font-medium text-gray-600 underline decoration-gray-400 hover:text-gray-900 disabled:opacity-50">
+                                                    Cancelar
+                                                </button>
+                                                <div class="ml-auto flex flex-col items-end gap-1.5 sm:ml-0">
+                                                    <template x-for="id in savedClientIds" :key="'link-' + id">
+                                                        <a :href="clientUrl(id)"
+                                                           class="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline whitespace-nowrap"
+                                                           x-text="linkLabel(id)"></a>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div x-show="pickerOpen" x-cloak
+                                            x-transition:enter="transition ease-out duration-100"
+                                            x-transition:enter-start="transform opacity-0 -translate-y-1"
+                                            x-transition:enter-end="transform opacity-100 translate-y-0"
+                                            class="mt-4 border-t border-gray-200 pt-4">
+                                            <p x-show="ajaxError" x-cloak class="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800" x-text="ajaxError"></p>
+                                            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                                <p class="text-xs text-gray-500">Marca <span class="font-medium text-violet-800">Interno</span> o uno o más clientes. Pulsa <span class="font-medium">Validar el cambio</span> para guardar en el servidor sin actualizar el resto del proyecto.</p>
+                                                <a href="{{ route('clients.create', ['project' => $project]) }}"
+                                                   class="inline-flex shrink-0 items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                                    Nuevo cliente
+                                                </a>
+                                            </div>
+                                            <div class="grid max-h-56 grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
+                                                <div class="flex w-max max-w-full items-center justify-self-start rounded-lg border border-violet-200 bg-violet-50 p-3">
+                                                    <input type="checkbox" id="project_edit_internal"
+                                                        :checked="draftInternal"
+                                                        @change="setDraftInternal($event.target.checked)"
+                                                        class="h-4 w-4 rounded border-violet-300 text-violet-700 focus:ring-violet-500">
+                                                    <label for="project_edit_internal" class="ml-2 block cursor-pointer text-sm font-medium text-violet-900">
+                                                        Interno <span class="font-normal text-violet-700">(proyecto propio, sin cliente)</span>
+                                                    </label>
+                                                </div>
+                                                @foreach($clients as $client)
+                                                    <div class="flex items-center">
+                                                        <input type="checkbox" id="client_edit_pick_{{ $client->id }}"
+                                                            :checked="isDraftClientChecked({{ $client->id }})"
+                                                            @change="toggleDraftClient({{ $client->id }}, $event.target.checked)"
+                                                            :disabled="draftInternal"
+                                                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50">
+                                                        <label for="client_edit_pick_{{ $client->id }}" class="ml-2 block cursor-pointer text-sm text-gray-900">
+                                                            {{ $client->commercial_name }}
+                                                        </label>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <div x-data="{ internal: {{ $isInternalClient ? 'true' : 'false' }} }">
+                                    <div class="grid grid-cols-1 gap-3 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-4 sm:grid-cols-2 lg:grid-cols-3">
+                                        <div class="flex w-max max-w-full items-center justify-self-start rounded-lg border border-violet-200 bg-violet-50 p-3">
+                                            <input type="checkbox" name="is_internal" value="1" id="project_create_internal" x-model="internal"
+                                                @change="if (internal) { $refs.clientCheckboxCreate.forEach((el) => { el.checked = false; }); }"
+                                                class="h-4 w-4 rounded border-violet-300 text-violet-700 focus:ring-violet-500">
+                                            <label for="project_create_internal" class="ml-2 block cursor-pointer text-sm font-medium text-violet-900">
+                                                Interno <span class="font-normal text-violet-700">(proyecto propio, sin cliente)</span>
+                                            </label>
+                                        </div>
+                                        @foreach($clients as $client)
+                                            <div class="flex items-center">
+                                                <input type="checkbox" name="clients[]" value="{{ $client->id }}" id="client_{{ $client->id }}" x-ref="clientCheckboxCreate"
+                                                    @if((is_array(old('clients')) && in_array($client->id, old('clients'))) || ($project->clients->contains($client->id))) checked @endif
+                                                    :disabled="internal"
+                                                    @change="if ($event.target.checked) { internal = false; }"
+                                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50">
+                                                <label for="client_{{ $client->id }}" class="ml-2 block text-sm text-gray-900 cursor-pointer">
+                                                    {{ $client->commercial_name }}
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                         </div>
 
                         <!-- Botones Submit -->

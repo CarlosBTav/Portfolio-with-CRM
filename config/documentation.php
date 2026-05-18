@@ -12,6 +12,7 @@ return [
     */
     'versions' => [
         'musical-luthier' => [
+            'allow_client_notes' => true,
             'title' => 'Tienda Musical Luthier',
             'client_name' => 'Musical Luthier',
             // Variantes del nombre en CRM para vincular la doc desde la edición del cliente
@@ -32,13 +33,19 @@ return [
                     'href' => 'https://fabimusica.212.227.94.151.nip.io/',
                 ],
             ],
-            'updated_at' => '2026-05-08',
+            'updated_at' => '2026-05-13',
             'contact_channel' => [
                 'label' => 'WhatsApp',
                 'value' => 'Responder por WhatsApp',
             ],
             'pending_information' => [
                 'Enviar imágenes o vídeos para usar en la landing (especialmente el vídeo que queréis usar en el hero/cabecera).',
+                [
+                    'html' => 'Texto e imágenes o vídeos para la sección <span class="font-semibold">Sobre nosotros</span> de la web. Podéis ver cómo queda ahora en <a href="https://fabimusica.212.227.94.151.nip.io/sobre-nosotros" target="_blank" rel="noopener noreferrer" class="font-medium text-indigo-600 underline decoration-indigo-300 underline-offset-2 hover:text-indigo-500 dark:text-indigo-300 dark:decoration-indigo-500/60 dark:hover:text-indigo-200">Sobre nosotros</a>.',
+                ],
+                [
+                    'html' => 'Entregarme listado de preguntas y respuestas para la sección de preguntas frecuentes (<a href="https://fabimusica.212.227.94.151.nip.io/preguntas-frecuentes" target="_blank" rel="noopener noreferrer" class="font-medium text-indigo-600 underline decoration-indigo-300 underline-offset-2 hover:text-indigo-500 dark:text-indigo-300 dark:decoration-indigo-500/60 dark:hover:text-indigo-200">Preguntas frecuentes</a>).',
+                ],
             ],
             'basic_information' => [
                 'instagram' => [

@@ -1,6 +1,7 @@
 @props([
     'variant' => 'viewport',
     'interactive' => true,
+    'wavesOverlay' => true,
     /*
      * Optional theme overrides (defaults match original /cv look).
      * backgroundColor: any CSS color (e.g. #f9fafb, rgb(...))
@@ -11,9 +12,11 @@
 ])
 
 @php
-    $stackClass = $variant === 'section'
-        ? 'ai-dots-bg-stack ai-dots-bg-stack--section'
-        : 'ai-dots-bg-stack ai-dots-bg-stack--viewport';
+    $stackClass = match ($variant) {
+        'section' => 'ai-dots-bg-stack ai-dots-bg-stack--section',
+        'hero' => 'ai-dots-bg-stack ai-dots-bg-stack--hero',
+        default => 'ai-dots-bg-stack ai-dots-bg-stack--viewport',
+    };
 
     $styleParts = [];
     if ($backgroundColor !== null && $backgroundColor !== '') {
@@ -63,11 +66,42 @@
             z-index: 0;
             overflow: hidden;
         }
+        .ai-dots-bg-stack--hero {
+            position: absolute;
+            left: -30%;
+            right: -30%;
+            top: 0;
+            bottom: 0;
+            z-index: 1;
+            overflow: hidden;
+            background: transparent;
+            --ai-dots-canvas-bg: transparent;
+            --ai-dots-mask-bg: transparent;
+            --ai-dots-dot: var(--hr-dots-dot, 99, 102, 241);
+            --ai-dots-fade-w: var(--hr-dots-fade-w, 22%);
+            --ai-dots-fade-h: var(--hr-dots-fade-h, 16%);
+            -webkit-mask-image:
+                linear-gradient(to bottom, transparent 0%, #000 var(--ai-dots-fade-h), #000 calc(100% - var(--ai-dots-fade-h)), transparent 100%),
+                linear-gradient(to right, transparent 0%, #000 var(--ai-dots-fade-w), #000 calc(100% - var(--ai-dots-fade-w)), transparent 100%);
+            mask-image:
+                linear-gradient(to bottom, transparent 0%, #000 var(--ai-dots-fade-h), #000 calc(100% - var(--ai-dots-fade-h)), transparent 100%),
+                linear-gradient(to right, transparent 0%, #000 var(--ai-dots-fade-w), #000 calc(100% - var(--ai-dots-fade-w)), transparent 100%);
+            -webkit-mask-composite: source-in;
+            mask-composite: intersect;
+            mask-mode: alpha;
+            -webkit-mask-size: 100% 100%;
+            mask-size: 100% 100%;
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+        }
         .ai-dots-bg-stack .js-ai-dots-canvas {
             display: block;
             width: 100%;
             height: 100%;
             background-color: var(--ai-dots-canvas-bg);
+        }
+        .ai-dots-bg-stack--hero .js-ai-dots-canvas {
+            background-color: transparent;
         }
         .ai-dots-bg-stack--viewport .js-ai-dots-canvas {
             position: absolute;
@@ -137,7 +171,8 @@
             50%  { transform: translate(12vw, -6vh) rotate(-5deg) scale(0.88, 1.22); }
             100% { transform: translate(24vw, 14vh) rotate(4deg) scale(1.04, 0.96); }
         }
-        .ai-dots-bg-stack .js-ai-dots-glow {
+        .ai-dots-bg-stack .js-ai-dots-glow,
+        .ai-dots-bg-stack .js-ai-dots-ripple-glow {
             position: absolute;
             width: 680px;
             height: 680px;
@@ -147,6 +182,11 @@
             mix-blend-mode: var(--ai-dots-glow-blend);
             filter: blur(40px);
             z-index: 2;
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+        .ai-dots-bg-stack--pointer-hover .js-ai-dots-glow {
+            opacity: 1;
         }
         body:has(> .ai-dots-bg-stack--viewport) .page {
             position: relative;
@@ -159,8 +199,9 @@
 @endonce
 
 @if($interactive)
-<div {{ $attributes->merge(['class' => $stackClass]) }} @if($inlineStyle) style="{{ $inlineStyle }}" @endif data-ai-dots-root="{{ $variant }}" aria-hidden="true">
+<div {{ $attributes->merge(['class' => $stackClass]) }} @if($inlineStyle) style="{{ $inlineStyle }}" @endif data-ai-dots-root="{{ $variant }}" @if($variant === 'hero') data-ai-dots-hit="stage" data-spacing="22" @endif aria-hidden="true">
     <canvas class="js-ai-dots-canvas"></canvas>
+    @if($wavesOverlay)
     <div class="ai-dots-mask-layer">
         <div class="ai-dots-wave-container">
             <svg class="ai-dots-wave-path ai-dots-wave-1" viewBox="0 0 1000 400" preserveAspectRatio="none">
@@ -181,9 +222,11 @@
         </div>
         <div class="js-ai-dots-glow ai-dots-glow"></div>
     </div>
+    @endif
 </div>
 
 @pushOnce('scripts', 'portfolio-ai-dots-background')
+@vite('resources/js/ai-dots-touch.js')
 <script>
 (function () {
     function initAiDotsRoots() {
@@ -193,16 +236,31 @@
             initOneRoot(root);
         });
     }
+    function resolveTouchHitElement(root, canvas) {
+        if (root.dataset.aiDotsHit === 'stage') {
+            return root.closest('.hr-photo-stage') || root.parentElement || canvas;
+        }
+        return canvas;
+    }
+
     function initOneRoot(root) {
         var canvas = root.querySelector('.js-ai-dots-canvas');
         var glow = root.querySelector('.js-ai-dots-glow');
         var maskLayer = root.querySelector('.ai-dots-mask-layer');
-        if (!canvas || !glow || !canvas.getContext) return;
+        if (!canvas || !canvas.getContext) return;
 
         var ctx = canvas.getContext('2d');
         var dots = [];
         var spacing = 28;
+        var spacingAttr = parseInt(root.dataset.spacing, 10);
+        if (spacingAttr >= 8 && spacingAttr <= 60) spacing = spacingAttr;
+        var touchHitEl = resolveTouchHitElement(root, canvas);
         var mouse = { x: -1000, y: -1000, px: -1000, py: -1000, speed: 0, radius: 140, ready: false };
+        var touch = window.AiDotsTouch;
+        var ripples = touch ? touch.createRippleState() : { list: [] };
+        var touchPrimary = touch ? touch.isTouchPrimary() : false;
+        var unbindRipples = null;
+        var mouseMoveHandler = null;
 
         var waveDefs = [
             {
@@ -372,7 +430,10 @@
 
         function visibilityForDot(gx, gy, cw, ch, now) {
             var v = waveBandFactor(gx, gy, cw, ch, now);
-            if (mouse.ready) {
+            if (touch && ripples.list.length > 0) {
+                v += touch.visibilityBoost(gx, gy, ripples, now, { maxRadius: 280 });
+            }
+            if (!touchPrimary && mouse.ready) {
                 var mdx = mouse.x - gx;
                 var mdy = mouse.y - gy;
                 var local = Math.exp(-(mdx * mdx + mdy * mdy) / (300 * 300));
@@ -391,17 +452,22 @@
             this.vx = 0;
             this.vy = 0;
         }
-        Dot.prototype.update = function () {
-            var dx = mouse.x - this.x;
-            var dy = mouse.y - this.y;
-            var distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance < mouse.radius && mouse.speed > 0.5) {
-                var force = (mouse.radius - distance) / mouse.radius;
-                var angle = Math.atan2(dy, dx);
-                var power = mouse.speed * 0.005;
-                if (power > 1.2) power = 1.2;
-                this.vx -= Math.cos(angle) * force * power;
-                this.vy -= Math.sin(angle) * force * power;
+        Dot.prototype.update = function (now) {
+            if (touch && ripples.list.length > 0) {
+                touch.applyRippleForces(this, ripples, now);
+            }
+            if (!touchPrimary) {
+                var dx = mouse.x - this.x;
+                var dy = mouse.y - this.y;
+                var distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < mouse.radius && mouse.speed > 0.5) {
+                    var force = (mouse.radius - distance) / mouse.radius;
+                    var angle = Math.atan2(dy, dx);
+                    var power = mouse.speed * 0.005;
+                    if (power > 1.2) power = 1.2;
+                    this.vx -= Math.cos(angle) * force * power;
+                    this.vy -= Math.sin(angle) * force * power;
+                }
             }
             this.x += this.vx;
             this.y += this.vy;
@@ -425,19 +491,43 @@
             ctx.globalAlpha = 1;
         };
 
+        var layoutW = 0;
+        var layoutH = 0;
+
         function syncSize() {
             var w = Math.max(1, Math.floor(canvas.clientWidth));
             var h = Math.max(1, Math.floor(canvas.clientHeight));
+            if (w === layoutW && h === layoutH && dots.length > 0) {
+                return;
+            }
+
+            var prevByBase = {};
+            for (var i = 0; i < dots.length; i++) {
+                var d = dots[i];
+                prevByBase[d.baseX + ',' + d.baseY] = d;
+            }
+
+            layoutW = w;
+            layoutH = h;
             if (canvas.width !== w || canvas.height !== h) {
                 canvas.width = w;
                 canvas.height = h;
             }
+
             dots = [];
             var x = 0;
             for (; x <= canvas.width; x += spacing) {
                 var y = 0;
                 for (; y <= canvas.height; y += spacing) {
-                    dots.push(new Dot(x, y));
+                    var dot = new Dot(x, y);
+                    var prev = prevByBase[x + ',' + y];
+                    if (prev) {
+                        dot.x = prev.x;
+                        dot.y = prev.y;
+                        dot.vx = prev.vx;
+                        dot.vy = prev.vy;
+                    }
+                    dots.push(dot);
                 }
             }
         }
@@ -446,13 +536,21 @@
             var now = performance.now();
             var dotRgbTriplet = getComputedStyle(root).getPropertyValue('--ai-dots-dot').trim() || '232, 118, 74';
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            var ds = Math.sqrt(Math.pow(mouse.x - mouse.px, 2) + Math.pow(mouse.y - mouse.py, 2));
-            if (ds > 72) ds = 72;
-            mouse.speed += (ds - mouse.speed) * 0.1;
-            mouse.px = mouse.x;
-            mouse.py = mouse.y;
+            if (touch) {
+                touch.pruneRipples(ripples, now);
+                if (maskLayer && glow) {
+                    touch.updateGlow(glow, maskLayer, canvas, ripples, now);
+                }
+            }
+            if (!touchPrimary) {
+                var ds = Math.sqrt(Math.pow(mouse.x - mouse.px, 2) + Math.pow(mouse.y - mouse.py, 2));
+                if (ds > 72) ds = 72;
+                mouse.speed += (ds - mouse.speed) * 0.1;
+                mouse.px = mouse.x;
+                mouse.py = mouse.y;
+            }
             for (var i = 0; i < dots.length; i++) {
-                dots[i].update();
+                dots[i].update(now);
                 dots[i].draw(now, dotRgbTriplet);
             }
             requestAnimationFrame(animate);
@@ -463,9 +561,11 @@
             mouse.x = clientX - rect.left;
             mouse.y = clientY - rect.top;
 
-            var maskRect = maskLayer ? maskLayer.getBoundingClientRect() : rect;
-            glow.style.left = (clientX - maskRect.left) + 'px';
-            glow.style.top = (clientY - maskRect.top) + 'px';
+            if (glow) {
+                var maskRect = maskLayer ? maskLayer.getBoundingClientRect() : rect;
+                glow.style.left = (clientX - maskRect.left) + 'px';
+                glow.style.top = (clientY - maskRect.top) + 'px';
+            }
 
             if (!mouse.ready) {
                 mouse.px = mouse.x;
@@ -475,9 +575,41 @@
             }
         }
 
-        function onMove(e) {
+        function onMouseMove(e) {
             if ('pointerType' in e && e.pointerType === 'touch') return;
             setMouseFromClient(e.clientX, e.clientY);
+        }
+
+        function applyInteractionMode(isTouch) {
+            touchPrimary = isTouch;
+            root.classList.toggle('ai-dots-bg-stack--pointer-hover', !isTouch);
+            mouse.ready = false;
+            mouse.x = -1000;
+            mouse.y = -1000;
+            mouse.speed = 0;
+            if (unbindRipples) {
+                unbindRipples();
+                unbindRipples = null;
+            }
+            if (mouseMoveHandler) {
+                window.removeEventListener('mousemove', mouseMoveHandler);
+                mouseMoveHandler = null;
+            }
+            if (isTouch && touch) {
+                if (glow) glow.style.opacity = '0';
+                unbindRipples = touch.bindTouchRipples(canvas, ripples, null, { hitElement: touchHitEl });
+            } else {
+                ripples.list.length = 0;
+                if (glow) glow.style.opacity = '';
+                mouseMoveHandler = onMouseMove;
+                window.addEventListener('mousemove', mouseMoveHandler, { passive: true });
+                if (touch) {
+                    unbindRipples = touch.bindRipples(canvas, ripples, null, {
+                        hitElement: touchHitEl,
+                        allowMouse: true,
+                    });
+                }
+            }
         }
 
         if (typeof ResizeObserver !== 'undefined') {
@@ -486,18 +618,42 @@
         }
         window.addEventListener('resize', syncSize);
         if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', syncSize, { passive: true });
+            window.visualViewport.addEventListener('resize', function () {
+                var vv = window.visualViewport;
+                if (!vv) return;
+                var w = Math.max(1, Math.floor(canvas.clientWidth));
+                var h = Math.max(1, Math.floor(canvas.clientHeight));
+                if (w !== layoutW || h !== layoutH) {
+                    syncSize();
+                }
+            }, { passive: true });
         }
-        window.addEventListener('mousemove', onMove, { passive: true });
+
+        applyInteractionMode(touchPrimary);
+        if (touch) {
+            touch.watchTouchMode(applyInteractionMode);
+        } else {
+            mouseMoveHandler = onMouseMove;
+            window.addEventListener('mousemove', mouseMoveHandler, { passive: true });
+            root.classList.add('ai-dots-bg-stack--pointer-hover');
+        }
 
         syncSize();
         animate();
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initAiDotsRoots);
-    } else {
+    function bootAiDots() {
+        if (!window.AiDotsTouch) {
+            requestAnimationFrame(bootAiDots);
+            return;
+        }
         initAiDotsRoots();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootAiDots);
+    } else {
+        bootAiDots();
     }
 })();
 </script>

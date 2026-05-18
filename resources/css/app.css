@@ -258,3 +258,8 @@ html.dark body.about-ai-dots-page .ai-dots-bg-stack {
         }
     }
 }
+
+/* Alpine: evita parpadeo / estados duplicados antes de hidratar */
+[x-cloak] {
+    display: none !important;
+}

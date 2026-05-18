@@ -57,4 +57,20 @@ class ServicePagesTest extends TestCase
         $response->assertSee('Sitio web corporativo', false);
         $response->assertDontSee('App móvil', false);
     }
+
+    public function test_app_development_page_uses_singular_heading_when_only_one_mobile_project(): void
+    {
+        Project::create([
+            'title' => 'Única app pública',
+            'description' => 'Solo un proyecto móvil.',
+            'visibility' => 'public',
+            'categories' => ['Mobile'],
+        ]);
+
+        $this->get(route('public.services.app'))
+            ->assertOk()
+            ->assertSee('Proyecto destacado', false)
+            ->assertDontSee('Proyectos destacados', false)
+            ->assertSee('Única app pública', false);
+    }
 }

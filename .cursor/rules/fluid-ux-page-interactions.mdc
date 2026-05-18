@@ -1,0 +1,14 @@
+---
+description: Preferir interacciones sin recarga completa de página para una UX fluida
+alwaysApply: true
+---
+
+# Interacciones fluidas (menos full page reload)
+
+En vistas públicas o de administración donde el usuario ya está leyendo o editando contenido largo (por ejemplo documentación con scroll), evita depender de `return back()`, `redirect()` o envíos de formulario clásicos cuando bastaría con **actualizar el DOM vía `fetch` + JSON** (o Livewire/Alpine según el stack).
+
+- Si ya existe un patrón **AJAX + `Accept: application/json`** en la misma pantalla, reutilízalo para crear, editar y **eliminar** en lugar de mezclar un flujo sin recarga para crear y otro con recarga para borrar.
+- Mantén la **respuesta HTML** (`back()`, fragmentos) como fallback para clientes sin JS o para pruebas manuales si aplica.
+- Objetivo: menos saltos de scroll, menos parpadeo y sensación de aplicación más continua.
+
+Referencia implementada: apuntes en `/documentacion/*` (`documentation-notes.js` + `PortfolioController` notas).

@@ -1,9 +1,13 @@
 import './bootstrap';
+import './documentation-notes.js';
 import './public-faq-accordion.js';
 
 import Alpine from 'alpinejs';
+import { registerProjectClientPicker } from './project-client-picker.js';
 
 window.Alpine = Alpine;
+
+registerProjectClientPicker(Alpine);
 
 Alpine.start();
 
