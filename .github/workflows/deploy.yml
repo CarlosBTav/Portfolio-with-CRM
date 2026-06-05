@@ -21,6 +21,7 @@ jobs:
             set -e
             cd /var/www/portfolio-cms
 
+            git remote set-url origin https://github.com/CarlosBTav/Portfolio-with-CRM.git
             git fetch origin main
             git reset --hard origin/main
 
