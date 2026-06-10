@@ -49,6 +49,25 @@
     $defaultCategoryId = 'web';
 @endphp
 
+@push('structured-data')
+<script type="application/ld+json">{!! json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'FAQPage',
+    'mainEntity' => collect($faqCategories)
+        ->flatMap(fn ($category) => $category['items'])
+        ->map(fn ($item) => [
+            '@type' => 'Question',
+            'name' => $item['q'],
+            'acceptedAnswer' => [
+                '@type' => 'Answer',
+                'text' => $item['a'],
+            ],
+        ])
+        ->values()
+        ->all(),
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+@endpush
+
 @section('content')
 <section class="relative mx-3 pb-24 pt-32 md:mx-6 lg:mx-10 lg:pt-36">
     <div

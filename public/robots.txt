@@ -1,2 +1,11 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /dashboard
+Disallow: /login
+Disallow: /register
+Disallow: /profile
+Disallow: /projects
+Disallow: /clients
+Disallow: /messages
+
+Sitemap: https://carlostavora.dev/sitemap.xml

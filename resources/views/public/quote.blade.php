@@ -1,5 +1,9 @@
 @extends('layouts.public')
 
+@section('title', 'Presupuesto | Carlos Codex')
+@section('meta_description', 'Presupuesto privado compartido por enlace directo.')
+@section('robots', 'noindex, nofollow, noarchive')
+
 @section('body-class', 'antialiased font-sans flex flex-col min-h-dynamic transition-colors duration-300 text-gray-900 dark:text-gray-100 about-ai-dots-page')
 
 @section('content')

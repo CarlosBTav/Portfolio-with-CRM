@@ -1,6 +1,7 @@
 @extends('layouts.public')
 
-@section('title', 'Sobre Mí')
+@section('title', 'Sobre mí | Carlos Codex')
+@section('meta_description', 'Conoce mi trayectoria, experiencia y forma de trabajar como desarrollador Full Stack especializado en productos digitales.')
 
 @section('body-class', 'antialiased font-sans flex flex-col min-h-dynamic transition-colors duration-300 text-gray-900 dark:text-gray-100 about-ai-dots-page')
 

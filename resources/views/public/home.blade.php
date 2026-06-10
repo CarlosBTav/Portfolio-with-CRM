@@ -1,5 +1,8 @@
 @extends('layouts.public')
 
+@section('title', 'Carlos Codex | Desarrollo web y aplicaciones')
+@section('meta_description', 'Desarrollo webs, aplicaciones y soluciones digitales a medida. Descubre mis proyectos y cuéntame qué producto necesitas construir.')
+
 @php
     $selectedService = request()->query('service');
     $serviceLeadMessages = [

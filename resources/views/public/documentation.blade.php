@@ -1,5 +1,9 @@
 @extends('layouts.public')
 
+@section('title', 'Documentación de proyecto | Carlos Codex')
+@section('meta_description', 'Documentación privada de proyecto compartida por enlace directo.')
+@section('robots', 'noindex, nofollow, noarchive')
+
 @section('body-class', 'antialiased font-sans flex flex-col min-h-dynamic transition-colors duration-300 text-gray-900 dark:text-gray-100 about-ai-dots-page')
 
 @section('content')

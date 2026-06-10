@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Carlos Burgos Távora — CV</title>
+  <meta name="description" content="Currículum profesional de Carlos Burgos Távora, desarrollador Full Stack." />
+  <meta name="robots" content="noindex, nofollow, noarchive" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
