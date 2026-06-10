@@ -24,3 +24,7 @@
         </div>
     </div>
 </article>
+
+@pushOnce('scripts', 'public-faq-accordion')
+    @vite('resources/js/public-faq-accordion.js')
+@endPushOnce
