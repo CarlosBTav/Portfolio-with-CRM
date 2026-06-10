@@ -355,3 +355,7 @@
     </section>
 </div>
 @endsection
+
+@push('scripts')
+    @vite('resources/js/documentation-notes.js')
+@endpush

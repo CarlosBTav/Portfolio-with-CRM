@@ -32,7 +32,7 @@ class ServicePagesTest extends TestCase
         $response->assertOk();
         $response->assertSee(route('public.services.web'), false);
         $response->assertSee(route('public.services.app'), false);
-        $response->assertSee(route('home', ['service' => 'custom-solutions']) . '#contact', false);
+        $response->assertSee(route('public.contact'), false);
     }
 
     public function test_web_development_page_only_lists_web_category_projects(): void

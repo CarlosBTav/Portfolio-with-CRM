@@ -22,11 +22,14 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
+                'resources/css/public-layout.css',
                 'resources/js/app.js',
+                'resources/js/public-layout.js',
                 'resources/css/spotlight.css',
-                'resources/js/spotlight.js', 
-                'resources/js/bg_code.js',
+                'resources/js/spotlight.js',
                 'resources/js/ai-dots-touch.js',
+                'resources/js/documentation-notes.js',
+                'resources/js/public-faq-accordion.js',
             ],
             refresh: true,
         }),
