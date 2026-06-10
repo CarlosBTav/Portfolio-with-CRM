@@ -4,7 +4,7 @@
 @section('meta_description', 'Selección de proyectos de desarrollo web, aplicaciones y soluciones digitales creadas para clientes y necesidades reales.')
 @section('canonical', $projects->url($projects->currentPage()))
 
-@section('body-class', 'antialiased font-sans flex flex-col min-h-dynamic transition-colors duration-300 text-gray-900 dark:text-gray-100 about-ai-dots-page')
+@section('body-class', 'antialiased font-sans flex flex-col min-h-dynamic transition-colors duration-300 text-gray-900 dark:text-gray-100 about-ai-dots-page projects-ai-dots-page')
 
 @section('content')
 @php
