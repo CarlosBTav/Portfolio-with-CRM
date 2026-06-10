@@ -1,6 +1,6 @@
 {{-- COMPONENTE DE NAVEGACIÓN EN PARTE PRIVADA(PARTIAL): Contiene exclusivamente el código del menú, enlaces y perfil de usuario (Ende se usará solo en la parte admin). Se inserta en los Layouts mediante @include. --}}
 
-<nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+<nav x-data="{ open: false, profileOpen: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -97,21 +97,54 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('projects.index')" :active="request()->routeIs('projects.*')">
+                {{ __('Proyectos') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('clients.index')" :active="request()->routeIs('clients.*')">
+                {{ __('Clientes') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">
+                {{ __('Mensajes') }}
+                @if(\App\Models\Message::where('is_read', false)->count() > 0)
+                    <span class="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
+                        {{ \App\Models\Message::where('is_read', false)->count() }}
+                    </span>
+                @endif
+            </x-responsive-nav-link>
         </div>
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800 dark:text-gray-200">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
-            </div>
+            <button
+                type="button"
+                @click="profileOpen = ! profileOpen"
+                class="flex w-full items-center justify-between px-4 py-2 text-left"
+                :aria-expanded="profileOpen.toString()"
+            >
+                <span>
+                    <span class="block font-medium text-base text-gray-800 dark:text-gray-200">{{ Auth::user()->name }}</span>
+                    <span class="block font-medium text-sm text-gray-500">{{ Auth::user()->email }}</span>
+                </span>
+                <svg
+                    class="h-5 w-5 text-gray-500 transition-transform"
+                    :class="{ 'rotate-180': profileOpen }"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7" />
+                </svg>
+            </button>
 
-            <div class="mt-3 space-y-1">
+            <div x-cloak x-show="profileOpen" class="mt-1 space-y-1 border-t border-gray-100 pt-1 dark:border-gray-700">
                 <x-responsive-nav-link :href="route('profile.edit')">
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
 
-                <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
 

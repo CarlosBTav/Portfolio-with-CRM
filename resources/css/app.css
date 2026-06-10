@@ -1,6 +1,15 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+}
 
 /*
  * ══════════════════════════════════════════════════════
@@ -92,6 +101,10 @@ body.about-ai-dots-page {
 }
 html.dark body.about-ai-dots-page {
     background-color: #111827 !important;
+}
+
+body.projects-ai-dots-page .page-entry-reveal {
+    margin-top: -3rem;
 }
 
 /*

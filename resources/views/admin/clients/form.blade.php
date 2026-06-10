@@ -175,7 +175,7 @@
                                                         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                                                             <div x-show="openEditModal" 
                                                                 @click="openEditModal = false"
-                                                                class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+                                                                class="fixed inset-0 bg-gray-500/75 transition-opacity"></div>
 
                                                             <!-- Contenido del Modal -->
                                                             <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">

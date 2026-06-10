@@ -52,22 +52,8 @@
         /* Scroll-to-top FAB */
         #scrollToTopBtn { transition: opacity 300ms ease, transform 300ms ease; will-change: opacity, transform; }
 
-        /* Entrada al cargar: todas las vistas que usan este layout (<main>) */
-        @keyframes public-page-enter {
-            0% { opacity: 0; transform: translate3d(0, 18px, 0); }
-            100% { opacity: 1; transform: translate3d(0, 0, 0); }
-        }
-        .public-page-enter {
-            animation: public-page-enter 1.45s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-            will-change: opacity, transform;
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .public-page-enter {
-                animation: none;
-                opacity: 1;
-                transform: none;
-                will-change: auto;
-            }
+        @view-transition {
+            navigation: auto;
         }
 
         @keyframes float-natural { 
@@ -532,7 +518,7 @@
     @include('partials.navbar')
 
     <!-- AQUÍ SE INYECTARÁ EL CONTENIDO DE LA VISTA -->
-    <main class="public-page-enter relative z-10 flex-grow min-w-0">
+    <main class="relative z-10 flex-grow min-w-0">
         @yield('content')
     </main>
 
