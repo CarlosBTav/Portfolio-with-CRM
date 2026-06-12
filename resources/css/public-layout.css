@@ -27,6 +27,23 @@ html::-webkit-scrollbar { display: none; }
     navigation: auto;
 }
 
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 0.22s;
+}
+
+#site-redesign-nav {
+    view-transition-name: public-header;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none !important;
+    }
+}
+
 @keyframes float-natural { 
     0%   { transform: translate(0, 0) rotate(0deg); } 
     33%  { transform: translate(2px, -5px) rotate(0.8deg); } 

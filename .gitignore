@@ -22,3 +22,9 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Security: DB manager must never be tracked or deployed
+/public/adminer.php
+
+# Static robots.txt would shadow the dynamic SeoController route
+/public/robots.txt

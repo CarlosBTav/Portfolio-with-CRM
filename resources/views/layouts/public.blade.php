@@ -8,12 +8,48 @@
     <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('img/favicon.png') }}?v={{ filemtime(public_path('img/favicon.png')) }}">
     <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v={{ filemtime(public_path('favicon.ico')) }}">
     
+    {{-- Anti-flash: runs synchronously before any CSS or paint.
+         Sets the background color matching the stored theme so the document
+         is never bare-white between navigations.
+         Colors from CSS tokens: light --color-bg #f9fafb / dark --color-bg #111827 --}}
+    <script>
+        (function(){
+            var dark = localStorage['color-theme'] === 'dark' ||
+                (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (dark) {
+                document.documentElement.classList.add('dark');
+                document.documentElement.style.backgroundColor = '#111827';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.style.backgroundColor = '#f9fafb';
+            }
+        })();
+    </script>
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,600,800&display=swap" rel="stylesheet" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Speculation Rules: prerender public pages on hover (Chromium-only, safely ignored elsewhere) -->
+    <script type="speculationrules">
+    {
+        "prerender": [{
+            "where": {
+                "and": [
+                    { "href_matches": "/*" },
+                    { "not": { "href_matches": [
+                        "/dashboard*", "/login*", "/register*", "/logout*",
+                        "/profile*", "/projects*", "/clients*", "/messages*", "/*\\?*"
+                    ] } }
+                ]
+            },
+            "eagerness": "moderate"
+        }]
+    }
+    </script>
 
     <!-- Scripts & Styles -->
     @vite([
@@ -24,16 +60,6 @@
         'resources/js/public-layout.js',
         'resources/js/spotlight.js',
     ])
-
-    {{-- Must run before first paint to avoid flashing the wrong color theme. --}}
-    <script>
-        /* Sync with the 'color-theme' key used by the theme-toggle component */
-        if (localStorage['color-theme'] === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    </script>
 </head>
 <body class="@yield('body-class','antialiased bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 font-sans flex flex-col min-h-dynamic transition-colors duration-300')">
     

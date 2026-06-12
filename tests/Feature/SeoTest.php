@@ -20,6 +20,9 @@ class SeoTest extends TestCase
         $response->assertSee('"@type":"Person"', false);
         $response->assertSee('"@type":"WebSite"', false);
         $response->assertSee('"@type":"ProfessionalService"', false);
+
+        // Speculation Rules must be present in the public layout
+        $response->assertSee('type="speculationrules"', false);
     }
 
     public function test_faq_page_includes_faq_structured_data(): void
