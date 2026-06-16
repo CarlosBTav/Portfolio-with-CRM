@@ -52,7 +52,7 @@
                             <a href="{{ route('public.about') }}" class="hover:text-teal-400 transition">Sobre mí</a>
                         </li>
                         <li>
-                            <a href="{{ $isHome ? '#projects' : route('home') . '#projects' }}" class="hover:text-teal-400 transition">Proyectos</a>
+                            <a href="{{ route('public.projects') }}" class="hover:text-teal-400 transition">Proyectos</a>
                         </li>
                         <li>
                             <a href="{{ route('public.services') }}" class="hover:text-teal-400 transition">Servicios</a>

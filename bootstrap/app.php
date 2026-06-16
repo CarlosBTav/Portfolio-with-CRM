@@ -11,7 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Public documentation note forms are anonymous (no auth session) and rate-limited,
+        // so CSRF verification would break mobile browsers that don't persist session cookies.
+        $middleware->validateCsrfTokens(except: [
+            'documentacion/*/apuntes',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

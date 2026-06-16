@@ -83,12 +83,16 @@
         return boost;
     }
 
-    /** Light push so dots shift slightly with the wave, without drifting far off-grid. */
+    /**
+     * Water-drop ripple: as the expanding crest passes a dot it gets a gentle outward
+     * nudge, then a slight inward pull behind the crest — so the dot bobs and settles
+     * (a drop hitting water seen from above), instead of being shoved hard outward.
+     */
     function applyRippleForces(dot, state, now) {
         for (var r = 0; r < state.list.length; r++) {
             var ripple = state.list[r];
             var age = now - ripple.t;
-            if (age > RIPPLE_DURATION * 0.55) continue;
+            if (age > RIPPLE_DURATION * 0.7) continue;
 
             var dx = dot.x - ripple.x;
             var dy = dot.y - ripple.y;
@@ -96,13 +100,18 @@
             if (dist < 1) continue;
 
             var progress = age / RIPPLE_DURATION;
-            var ringR = rippleRadius(progress, 260);
-            var pushR = ringR * 0.42 + 24;
-            if (dist > pushR) continue;
+            var ringR = rippleRadius(progress, 280);
 
-            var ringDist = Math.abs(dist - ringR);
-            var nearRing = Math.exp(-(ringDist * ringDist) / (48 * 48));
-            var force = nearRing * (1 - progress) * 0.22;
+            // Signed distance to the crest: positive ahead of the wave, negative behind.
+            var signed = dist - ringR;
+            var crestWidth = 46;
+            var falloff = Math.exp(-(signed * signed) / (crestWidth * crestWidth));
+            if (falloff < 0.01) continue;
+
+            // Derivative-of-gaussian profile: push outward on the leading edge, pull
+            // inward on the trailing edge → the dot oscillates and returns to rest.
+            var oscillation = -(signed / crestWidth) * falloff;
+            var force = oscillation * (1 - progress) * 0.12;
             dot.vx += (dx / dist) * force;
             dot.vy += (dy / dist) * force;
         }

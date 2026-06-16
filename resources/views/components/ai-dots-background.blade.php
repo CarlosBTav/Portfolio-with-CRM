@@ -185,9 +185,6 @@
             opacity: 0;
             will-change: transform, opacity;
         }
-        .ai-dots-bg-stack--pointer-hover .js-ai-dots-glow {
-            opacity: 1;
-        }
         body:has(> .ai-dots-bg-stack--viewport) .page {
             position: relative;
             z-index: 10;
@@ -256,6 +253,12 @@
         if (spacingAttr >= 8 && spacingAttr <= 60) spacing = spacingAttr;
         var touchHitEl = resolveTouchHitElement(root, canvas);
         var mouse = { x: -1000, y: -1000, px: -1000, py: -1000, speed: 0, radius: 140, ready: false };
+        // Trail of recent pointer positions (desktop). Dots light up along it and fade out.
+        var TRAIL_LIFE = 650;   // ms each trail point stays lit
+        var TRAIL_MAX = 60;     // max stored points
+        var TRAIL_MIN_STEP = 4; // min px between sampled points
+        var TRAIL_SIGMA = 24;   // px base radius of light around each point (small = tight spots)
+        var trail = [];
         var touch = window.AiDotsTouch;
         var ripples = touch ? touch.createRippleState() : { list: [] };
         var touchPrimary = touch ? touch.isTouchPrimary() : false;
@@ -433,11 +436,24 @@
             if (touch && ripples.list.length > 0) {
                 v += touch.visibilityBoost(gx, gy, ripples, now, { maxRadius: 280 });
             }
-            if (!touchPrimary && mouse.ready) {
-                var mdx = mouse.x - gx;
-                var mdy = mouse.y - gy;
-                var local = Math.exp(-(mdx * mdx + mdy * mdy) / (300 * 300));
-                v += local * 0.82;
+            if (!touchPrimary && trail.length > 0) {
+                var tb = 0;
+                for (var ti = 0; ti < trail.length; ti++) {
+                    var pt = trail[ti];
+                    var age = now - pt.t;
+                    if (age >= TRAIL_LIFE) continue;
+                    var fade = 1 - age / TRAIL_LIFE;
+                    var tdx = pt.x - gx;
+                    var tdy = pt.y - gy;
+                    var d2 = tdx * tdx + tdy * tdy;
+                    // Irregular, organic blob: deform the radius by angle so edges are blotchy.
+                    var ang = Math.atan2(tdy, tdx);
+                    var wobble = 1 + 0.34 * Math.sin(ang * 3 + pt.seed) + 0.2 * Math.sin(ang * 5 - pt.seed * 1.7);
+                    var sig = TRAIL_SIGMA * pt.s * wobble;
+                    tb += Math.exp(-d2 / (sig * sig)) * fade * pt.a;
+                }
+                if (tb > 1) tb = 1;
+                v += tb * 0.95;
             }
             if (v > 1) v = 1;
             else if (v < 0) v = 0;
@@ -543,6 +559,7 @@
                 }
             }
             if (!touchPrimary) {
+                while (trail.length && now - trail[0].t >= TRAIL_LIFE) trail.shift();
                 var ds = Math.sqrt(Math.pow(mouse.x - mouse.px, 2) + Math.pow(mouse.y - mouse.py, 2));
                 if (ds > 72) ds = 72;
                 mouse.speed += (ds - mouse.speed) * 0.1;
@@ -561,10 +578,21 @@
             mouse.x = clientX - rect.left;
             mouse.y = clientY - rect.top;
 
-            if (glow) {
-                var maskRect = maskLayer ? maskLayer.getBoundingClientRect() : rect;
-                glow.style.left = (clientX - maskRect.left) + 'px';
-                glow.style.top = (clientY - maskRect.top) + 'px';
+            // Sample the pointer path into the light trail (desktop only).
+            if (!touchPrimary) {
+                var nowTs = performance.now();
+                var lastPt = trail.length ? trail[trail.length - 1] : null;
+                if (!lastPt || Math.hypot(mouse.x - lastPt.x, mouse.y - lastPt.y) >= TRAIL_MIN_STEP) {
+                    trail.push({
+                        x: mouse.x,
+                        y: mouse.y,
+                        t: nowTs,
+                        s: 0.5 + Math.random() * 1.0,   // random size → uneven spots
+                        a: 0.6 + Math.random() * 0.5,   // random intensity
+                        seed: Math.random() * 6.283      // random angular phase → organic edges
+                    });
+                    if (trail.length > TRAIL_MAX) trail.shift();
+                }
             }
 
             if (!mouse.ready) {
@@ -583,6 +611,7 @@
         function applyInteractionMode(isTouch) {
             touchPrimary = isTouch;
             root.classList.toggle('ai-dots-bg-stack--pointer-hover', !isTouch);
+            trail.length = 0;
             mouse.ready = false;
             mouse.x = -1000;
             mouse.y = -1000;
@@ -600,7 +629,8 @@
                 unbindRipples = touch.bindTouchRipples(canvas, ripples, null, { hitElement: touchHitEl });
             } else {
                 ripples.list.length = 0;
-                if (glow) glow.style.opacity = '';
+                // No follow-glow on desktop: the lit dot trail is the light now.
+                if (glow) glow.style.opacity = '0';
                 mouseMoveHandler = onMouseMove;
                 window.addEventListener('mousemove', mouseMoveHandler, { passive: true });
                 if (touch) {

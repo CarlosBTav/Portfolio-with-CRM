@@ -356,9 +356,9 @@
                            @if($isAbout) aria-current="page" @endif>Sobre mí</a>
                     </li>
                     <li>
-                        <a href="{{ $isHome ? '#projects' : route('home') . '#projects' }}"
-                           class="srn-link"
-                           :class="(isHome && activeHomeSection === 'projects') ? 'is-active' : ''">Portfolio</a>
+                        <a href="{{ route('public.projects') }}"
+                           class="srn-link {{ request()->routeIs('public.projects') ? 'is-active' : '' }}"
+                           @if(request()->routeIs('public.projects')) aria-current="page" @endif>Portfolio</a>
                     </li>
                     <li>
                         <a href="{{ $contactHref }}"
@@ -398,10 +398,10 @@
                            :class="(isHome && activeHomeSection === 'about') ? 'is-active' : ''">Sobre mí</a>
                     </li>
                     <li>
-                        <a href="{{ $isHome ? '#projects' : route('home') . '#projects' }}"
+                        <a href="{{ route('public.projects') }}"
                            @click="open = false"
-                           class="srn-mobile-link"
-                           :class="(isHome && activeHomeSection === 'projects') ? 'is-active' : ''">Portfolio</a>
+                           class="srn-mobile-link {{ request()->routeIs('public.projects') ? 'is-active' : '' }}"
+                           @if(request()->routeIs('public.projects')) aria-current="page" @endif>Portfolio</a>
                     </li>
                     <li>
                         <a href="{{ $contactHref }}"
