@@ -1964,6 +1964,7 @@
     new IntersectionObserver(([e]) => { active = e.isIntersecting; if (active) frame(); }, { threshold: 0 }).observe(canvas);
   }
 })();
+</script>
 
 <!-- Tarjetas skills técnicas -->
 <script>
