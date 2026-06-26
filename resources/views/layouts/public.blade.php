@@ -58,6 +58,10 @@
     </div>
 
 
+    @if(config('services.umami.src') && config('services.umami.website_id') && ! request()->is('dashboard', 'dashboard/*', 'admin', 'admin/*', 'profile', 'profile/*', 'login', 'register'))
+        <script defer src="{{ config('services.umami.src') }}" data-website-id="{{ config('services.umami.website_id') }}"></script>
+    @endif
+
     <!-- Espacio para inyectar scripts específicos de cada vista -->
     @stack('scripts')
 </body>

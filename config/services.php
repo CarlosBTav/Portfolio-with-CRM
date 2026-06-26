@@ -59,4 +59,9 @@ return [
         'chat_id' => env('TELEGRAM_CHAT_ID'),
     ],
 
+    'umami' => [
+        'src' => env('UMAMI_SRC'),
+        'website_id' => env('UMAMI_WEBSITE_ID'),
+    ],
+
 ];
