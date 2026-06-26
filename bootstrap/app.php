@@ -1,8 +1,11 @@
 <?php
 
+use App\Services\Notifications\TelegramNotifier;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,5 +21,22 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Avisa de errores 500 al bot personal de Telegram. Ignora 4xx, errores
+        // de validación y los de consola/cola (esos se quedan en el log).
+        $exceptions->report(function (Throwable $e): void {
+            if ($e instanceof HttpExceptionInterface || $e instanceof ValidationException) {
+                return;
+            }
+
+            if (app()->runningInConsole()) {
+                return;
+            }
+
+            try {
+                $request = request();
+                (new TelegramNotifier())->sendServerError($e, $request->method(), $request->fullUrl());
+            } catch (Throwable) {
+                // Que un fallo al avisar no rompa el manejo del error original.
+            }
+        });
     })->create();

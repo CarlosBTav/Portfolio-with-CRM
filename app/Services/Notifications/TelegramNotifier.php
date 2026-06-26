@@ -4,10 +4,52 @@ namespace App\Services\Notifications;
 
 use App\Models\Message;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use RuntimeException;
+use Throwable;
 
 class TelegramNotifier
 {
+    /**
+     * Aviso de un error de servidor (500) al bot personal. Mismo bot que los
+     * mensajes de la web (es el bot del desarrollador). No lanza excepciones:
+     * un fallo al avisar no debe romper el manejo del error original.
+     */
+    public function sendServerError(Throwable $e, ?string $method = null, ?string $url = null): void
+    {
+        $config = config('services.telegram');
+        $botToken = (string) ($config['bot_token'] ?? '');
+        $chatId = (string) ($config['chat_id'] ?? '');
+
+        if ($botToken === '' || $chatId === '') {
+            return;
+        }
+
+        $lines = ['🔥 <b>[portfolio-cms] Error 500 en la web</b>'];
+
+        if ($method || $url) {
+            $lines[] = '🔗 <code>'.$this->escape(trim(($method ? $method.' ' : '').($url ?? ''))).'</code>';
+        }
+
+        $lines[] = '💥 <b>'.$this->escape(class_basename($e)).'</b>';
+        $lines[] = '🐞 <code>'.$this->escape(Str::limit($e->getMessage(), 300)).'</code>';
+        $lines[] = '📄 <i>'.$this->escape(Str::after($e->getFile(), base_path().'/')).':'.$e->getLine().'</i>';
+
+        try {
+            Http::timeout(15)->post(
+                sprintf('https://api.telegram.org/bot%s/sendMessage', $botToken),
+                [
+                    'chat_id' => $chatId,
+                    'text' => implode("\n", $lines),
+                    'parse_mode' => 'HTML',
+                    'disable_web_page_preview' => true,
+                ]
+            );
+        } catch (Throwable) {
+            // Silencioso a propósito.
+        }
+    }
+
     public function sendNewMessageAlert(Message $message): void
     {
         $config = config('services.telegram');
